@@ -1,9 +1,21 @@
+import { router } from "@inertiajs/react";
 import { useState } from "react";
 import { VideoPlayer } from "@/components/livestream/VideoPlayer";
 import { ChatOverlay } from "@/components/livestream/ChatOverlay";
 import { ChatInput } from "@/components/livestream/ChatInput";
 import { ProductCarousel } from "@/components/livestream/ProductCarousel";
 import { ProductModal } from "@/components/livestream/ProductModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Product, ChatMessage } from "@/types/livestream";
 
 const products: Product[] = [
@@ -55,9 +67,42 @@ const initialMessages: ChatMessage[] = [
   },
 ];
 
-const Index = () => {
+const Index = (props: { livekit_ws_url: string; livekit_token: string | null }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [messages] = useState<ChatMessage[]>(initialMessages);
+  const [viewerName, setViewerName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const livekit_token = props.livekit_token;
+  const showNameDialog = !livekit_token;
+
+  const handleNameSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!viewerName.trim()) {
+      setNameError("Please enter your name to continue.");
+      return;
+    }
+
+    setNameError(null);
+    setIsSubmitting(true);
+
+    router.post(
+      "/live",
+      { name: viewerName.trim() },
+      {
+        preserveScroll: true,
+        onError: (errors) => {
+          if (errors.name) {
+            setNameError(errors.name);
+          }
+        },
+        onFinish: () => {
+          setIsSubmitting(false);
+        },
+      }
+    );
+  };
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
@@ -88,6 +133,47 @@ const Index = () => {
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
         />
+      )}
+
+      {showNameDialog && (
+        <Dialog open>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Join the live stream</DialogTitle>
+              <DialogDescription>
+                Let us know your name so we can personalize your experience before
+                connecting you to the room.
+              </DialogDescription>
+            </DialogHeader>
+            <form className="space-y-4" onSubmit={handleNameSubmit}>
+              <div className="space-y-2">
+                <Label htmlFor="viewer-name">Name</Label>
+                <Input
+                  id="viewer-name"
+                  placeholder="Alex Kim"
+                  value={viewerName}
+                  onChange={(event) => setViewerName(event.target.value)}
+                  aria-invalid={Boolean(nameError)}
+                  autoComplete="name"
+                  required
+                />
+                {nameError && (
+                  <p className="text-sm text-destructive">{nameError}</p>
+                )}
+              </div>
+              <DialogFooter className="flex-col gap-2">
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Requesting access…" : "Join the stream"}
+                </Button>
+                {isSubmitting && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    Hang tight while we generate your access token.
+                  </p>
+                )}
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
