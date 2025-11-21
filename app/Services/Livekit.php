@@ -1,0 +1,84 @@
+<?php
+
+namespace App\Services;
+
+use Agence104\LiveKit\RoomServiceClient;
+use Agence104\LiveKit\RoomCreateOptions;
+use Agence104\LiveKit\IngressServiceClient;
+
+use Livekit\S3Upload;
+use Livekit\SegmentedFileOutput;
+use Livekit\SegmentedFileProtocol;
+use Livekit\AutoTrackEgress;
+use Livekit\AutoParticipantEgress;
+use Livekit\RoomEgress;
+use Livekit\IngressInput;
+
+class Livekit
+{
+    public static function createRoom(string $roomName)
+    {
+        $roomService = new RoomServiceClient(
+            config("livekit.api_url"),
+            config("livekit.api_key"),
+            config("livekit.api_secret"),
+        );
+
+        // Configure S3 upload
+        $s3 = new S3Upload([
+            'access_key' => config("livekit.s3_access_key"),
+            'secret' => config("livekit.s3_secret"),
+            'region' => config("livekit.s3_region"),
+            'bucket' => config("livekit.s3_bucket"),
+            'endpoint' => config("livekit.s3_endpoint"),
+            'force_path_style' => true,
+        ]);
+
+        // Configure HLS segmented output for livestreaming
+        $segmentedOutput = new SegmentedFileOutput([
+            'filename_prefix' => $roomName . '/{publisher_identity}-{track_type}',
+            'playlist_name' => 'stream.m3u8',
+            'live_playlist_name' => 'stream_live.m3u8',
+            'segment_duration' => 6, // 6 seconds per segment (good for livestreaming)
+            'protocol' => SegmentedFileProtocol::HLS_PROTOCOL,
+        ]);
+        $segmentedOutput->setS3($s3);
+
+        // Configure automatic participant egress (records each participant's stream as HLS)
+        $participantEgress = new AutoParticipantEgress([
+            'segment_outputs' => [$segmentedOutput],
+        ]);
+
+        // Configure room egress
+        $roomEgress = new RoomEgress();
+        $roomEgress->setParticipant($participantEgress);
+
+        // Create room with egress configuration
+        $opts = (new RoomCreateOptions())
+            ->setName($roomName)
+            ->setMetadata(json_encode([]))
+            ->setEgress($roomEgress);
+
+        $room = $roomService->createRoom($opts);
+
+        // Create RTMP ingress
+        $ingressService = new IngressServiceClient(
+            config("livekit.api_url"),
+            config("livekit.api_key"),
+            config("livekit.api_secret"),
+        );
+
+        $ingress = $ingressService->createIngress(
+            IngressInput::RTMP_INPUT,
+            $roomName,              // name
+            $roomName,              // roomName
+            'streamer-obs',         // participantIdentity
+            'Streamer (OBS)'        // participantName
+        );
+
+        return [
+            'room' => $room,
+            'ingress' => $ingress,
+        ];
+    }
+}
