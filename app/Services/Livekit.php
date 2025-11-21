@@ -6,10 +6,10 @@ use Agence104\LiveKit\RoomServiceClient;
 use Agence104\LiveKit\RoomCreateOptions;
 use Agence104\LiveKit\IngressServiceClient;
 
+use Illuminate\Support\Str;
 use Livekit\S3Upload;
 use Livekit\SegmentedFileOutput;
 use Livekit\SegmentedFileProtocol;
-use Livekit\AutoTrackEgress;
 use Livekit\AutoParticipantEgress;
 use Livekit\RoomEgress;
 use Livekit\IngressInput;
@@ -36,10 +36,10 @@ class Livekit
 
         // Configure HLS segmented output for livestreaming
         $segmentedOutput = new SegmentedFileOutput([
-            'filename_prefix' => $roomName . '/{publisher_identity}-{track_type}',
+            'filename_prefix' => $roomName . '-' . Str::random(8) . '/',
             'playlist_name' => 'stream.m3u8',
             'live_playlist_name' => 'stream_live.m3u8',
-            'segment_duration' => 6, // 6 seconds per segment (good for livestreaming)
+            'segment_duration' => 3,
             'protocol' => SegmentedFileProtocol::HLS_PROTOCOL,
         ]);
         $segmentedOutput->setS3($s3);
