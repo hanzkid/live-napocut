@@ -34,11 +34,11 @@ class Livekit
             'force_path_style' => true,
         ]);
 
-        // Configure HLS segmented output for livestreaming
+        // Configure HLS segmented output for livestreaming (live only, no VOD recording)
+        $s3Path = $roomName . '-' . Str::random(8) . '/';
         $segmentedOutput = new SegmentedFileOutput([
-            'filename_prefix' => $roomName . '-' . Str::random(8) . '/',
-            'playlist_name' => 'stream.m3u8',
-            'live_playlist_name' => 'stream_live.m3u8',
+            'filename_prefix' => $s3Path,
+            'live_playlist_name' => 'live.m3u8',
             'segment_duration' => 3,
             'protocol' => SegmentedFileProtocol::HLS_PROTOCOL,
         ]);
@@ -77,8 +77,9 @@ class Livekit
         );
 
         return [
-            'room' => $room,
-            'ingress' => $ingress,
+            'ws_url' => $ingress->getUrl(),
+            'stream_key' => $ingress->getStreamKey(),
+            's3_path' => $s3Path . '/live.m3u8',
         ];
     }
 }

@@ -17,9 +17,7 @@ class LivestreamController extends Controller
             'id',
             'title',
             'ws_url',
-            'stream_key',
-            'created_at',
-            'updated_at',
+            'stream_key'
         ])->latest()->get();
 
         return Inertia::render('livestream/index', [
@@ -33,10 +31,14 @@ class LivestreamController extends Controller
             'title' => ['required', 'string', 'max:255'],
         ]);
 
-        $room = Livekit::createRoom($validated['title']);
-        dd($room);
+        $streamData = Livekit::createRoom($validated['title']);
 
-        LiveStream::create($validated);
+        LiveStream::create([
+            'title' => $validated['title'],
+            'ws_url' => $streamData['ws_url'],
+            'stream_key' => $streamData['stream_key'],
+            's3_path' => $streamData['s3_path'],
+        ]);
 
         return redirect()
             ->route('livestream.index')
