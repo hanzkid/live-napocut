@@ -17,7 +17,8 @@ class LivestreamController extends Controller
             'id',
             'title',
             'ws_url',
-            'stream_key'
+            'stream_key',
+            'created_at'
         ])->latest()->get();
 
         return Inertia::render('livestream/index', [

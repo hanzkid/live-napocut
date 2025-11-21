@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/livestream/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { index as livestreamIndexRoute, store as livestreamStoreRoute } from '@/routes/livestream';
@@ -26,7 +27,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { ArrowUpDown, Plus } from 'lucide-react';
+import { ArrowUpDown, Copy, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type LivestreamRecord = {
@@ -68,7 +69,21 @@ const columns: ColumnDef<LivestreamRecord>[] = [
         header: () => <span className="text-sm font-semibold">Websocket URL</span>,
         cell: ({ row }) =>
             row.original.ws_url ? (
-                <span className="font-mono text-xs text-primary">{row.original.ws_url}</span>
+                <div className="flex items-center gap-2 group">
+                    <span className="font-mono text-xs text-primary">{row.original.ws_url}</span>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => {
+                            navigator.clipboard.writeText(row.original.ws_url || '');
+                            toast.success('WebSocket URL copied to clipboard');
+                        }}
+                        title="Copy to clipboard"
+                    >
+                        <Copy className="h-3 w-3" />
+                    </Button>
+                </div>
             ) : (
                 <span className="text-sm text-muted-foreground">—</span>
             ),
@@ -77,7 +92,23 @@ const columns: ColumnDef<LivestreamRecord>[] = [
         accessorKey: 'stream_key',
         header: () => <span className="text-sm font-semibold">Stream key</span>,
         cell: ({ row }) => (
-            <span className="font-mono text-xs">{maskStreamKey(row.original.stream_key)}</span>
+            <div className="flex items-center gap-2 group">
+                <span className="font-mono text-xs">{maskStreamKey(row.original.stream_key)}</span>
+                {row.original.stream_key && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => {
+                            navigator.clipboard.writeText(row.original.stream_key || '');
+                            toast.success('Stream key copied to clipboard');
+                        }}
+                        title="Copy to clipboard"
+                    >
+                        <Copy className="h-3 w-3" />
+                    </Button>
+                )}
+            </div>
         ),
     },
     {
@@ -85,14 +116,6 @@ const columns: ColumnDef<LivestreamRecord>[] = [
         header: () => <span className="text-sm font-semibold">Created</span>,
         cell: ({ row }) => (
             <span className="text-sm text-muted-foreground">{formatDateTime(row.original.created_at)}</span>
-        ),
-        enableSorting: true,
-    },
-    {
-        accessorKey: 'updated_at',
-        header: () => <span className="text-sm font-semibold">Updated</span>,
-        cell: ({ row }) => (
-            <span className="text-sm text-muted-foreground">{formatDateTime(row.original.updated_at)}</span>
         ),
         enableSorting: true,
     },
