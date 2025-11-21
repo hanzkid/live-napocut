@@ -15,7 +15,9 @@ return new class extends Migration {
             $table->string('title')->nullable();
             $table->string('ws_url')->nullable();
             $table->string('stream_key')->nullable();
+            $table->string('ingress_id')->nullable();
             $table->string('s3_path')->nullable();
+            $table->boolean('is_active')->default(false);
             $table->timestamps();
         });
     }

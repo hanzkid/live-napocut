@@ -18,6 +18,7 @@ class LivestreamController extends Controller
             'title',
             'ws_url',
             'stream_key',
+            'is_active',
             'created_at'
         ])->latest()->get();
 
@@ -38,6 +39,7 @@ class LivestreamController extends Controller
             'title' => $validated['title'],
             'ws_url' => $streamData['ws_url'],
             'stream_key' => $streamData['stream_key'],
+            'ingress_id' => $streamData['ingress_id'],
             's3_path' => $streamData['s3_path'],
         ]);
 

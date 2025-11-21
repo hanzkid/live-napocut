@@ -79,6 +79,7 @@ class Livekit
         return [
             'ws_url' => $ingress->getUrl(),
             'stream_key' => $ingress->getStreamKey(),
+            'ingress_id' => $ingress->getIngressId(),
             's3_path' => $s3Path . '/live.m3u8',
         ];
     }

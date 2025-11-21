@@ -10,6 +10,8 @@ class LiveStream extends Model
         'title',
         'ws_url',
         'stream_key',
+        'ingress_id',
         's3_path',
+        'is_active',
     ];
 }
