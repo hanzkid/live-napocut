@@ -1,5 +1,7 @@
 import { router } from "@inertiajs/react";
 import { useState } from "react";
+import { LiveKitRoom } from "@livekit/components-react";
+import "@livekit/components-styles";
 import { VideoPlayer } from "@/components/livestream/VideoPlayer";
 import { ChatOverlay } from "@/components/livestream/ChatOverlay";
 import { ChatInput } from "@/components/livestream/ChatInput";
@@ -19,57 +21,40 @@ import { Label } from "@/components/ui/label";
 import { Product, ChatMessage } from "@/types/livestream";
 
 const products: Product[] = [
-    {
-      id: "1",
-      name: "Pre-owned Hermes Birkin 30 Bleu Izmir Shiny Niloticus Crocodile Palladium Hardware",
-      price: 50500,
-      image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&q=80",
-      images: [
-        "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&q=80",
-        "https://images.unsplash.com/photo-1591561954557-26941169b49e?w=800&q=80",
-      ],
-      description: "Pre-owned Hermes Birkin 30 Bleu Izmir Shiny Niloticus Crocodile Palladium Hardware"
-    },
-    {
-      id: "2",
-      name: "Chanel Classic Flap Bag Medium Black Lambskin Gold Hardware",
-      price: 8500,
-      image: "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800&q=80",
-      images: [
-        "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800&q=80",
-      ],
-      description: "Chanel Classic Flap Bag Medium Black Lambskin Gold Hardware"
-    },
-    {
-      id: "3",
-      name: "Louis Vuitton Neverfull MM Monogram Canvas",
-      price: 1890,
-      image: "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=800&q=80",
-      images: [
-        "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=800&q=80",
-      ],
-      description: "Louis Vuitton Neverfull MM Monogram Canvas"
-    },
-  ];
-const initialMessages: ChatMessage[] = [
   {
     id: "1",
-    username: "ModAve",
-    message: "Welcome to ModAve Live!",
-    timestamp: new Date(),
-    isSystem: true,
+    name: "Pre-owned Hermes Birkin 30 Bleu Izmir Shiny Niloticus Crocodile Palladium Hardware",
+    price: 50500,
+    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&q=80",
+      "https://images.unsplash.com/photo-1591561954557-26941169b49e?w=800&q=80",
+    ],
+    description: "Pre-owned Hermes Birkin 30 Bleu Izmir Shiny Niloticus Crocodile Palladium Hardware"
   },
   {
     id: "2",
-    username: "Victoria",
-    message: "WOW",
-    timestamp: new Date(),
+    name: "Chanel Classic Flap Bag Medium Black Lambskin Gold Hardware",
+    price: 8500,
+    image: "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800&q=80",
+    ],
+    description: "Chanel Classic Flap Bag Medium Black Lambskin Gold Hardware"
+  },
+  {
+    id: "3",
+    name: "Louis Vuitton Neverfull MM Monogram Canvas",
+    price: 1890,
+    image: "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=800&q=80",
+    ],
+    description: "Louis Vuitton Neverfull MM Monogram Canvas"
   },
 ];
-
 const Index = (props: { livekit_ws_url: string; livekit_token: string | null }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [messages] = useState<ChatMessage[]>(initialMessages);
   const [viewerName, setViewerName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -106,34 +91,43 @@ const Index = (props: { livekit_ws_url: string; livekit_token: string | null }) 
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
-      {/* Video Player */}
-      <VideoPlayer  />
+      {livekit_token ? (
+        <LiveKitRoom
+          serverUrl={props.livekit_ws_url}
+          token={livekit_token}
+          connect={true}
+          className="relative w-full h-full"
+        >
+          {/* Video Player */}
+          <VideoPlayer />
 
-      {/* Chat Overlay */}
-      <div className="absolute bottom-44 left-4 right-4 z-20">
-        <ChatOverlay messages={messages} />
-      </div>
+          {/* Chat Overlay */}
+          <div className="absolute bottom-44 left-4 right-4 z-20">
+            <ChatOverlay />
+          </div>
 
-      {/* Chat Input */}
-      <div className="absolute bottom-24 left-0 right-0 z-20">
-        <ChatInput />
-      </div>
+          {/* Chat Input */}
+          <div className="absolute bottom-24 left-0 right-0 z-20">
+            <ChatInput />
+          </div>
 
-      {/* Product Carousel */}
-      <div className="absolute bottom-0 left-0 right-0 z-20">
-        <ProductCarousel
-          products={products}
-          onProductClick={setSelectedProduct}
-        />
-      </div>
+          {/* Product Carousel */}
+          <div className="absolute bottom-0 left-0 right-0 z-20">
+            <ProductCarousel
+              products={products}
+              onProductClick={setSelectedProduct}
+            />
+          </div>
 
-      {/* Product Modal */}
-      {selectedProduct && (
-        <ProductModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
+          {/* Product Modal */}
+          {selectedProduct && (
+            <ProductModal
+              product={selectedProduct}
+              onClose={() => setSelectedProduct(null)}
+            />
+          )}
+        </LiveKitRoom>
+      ) : null}
 
       {showNameDialog && (
         <Dialog open>

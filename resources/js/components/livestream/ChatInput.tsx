@@ -1,19 +1,17 @@
 import { useState } from "react";
+import { useChat } from "@livekit/components-react";
 import { Input } from "@/components/livestream/ui/input";
 import { Button } from "@/components/livestream/ui/button";
 import { Send } from "lucide-react";
 
-interface ChatInputProps {
-  onSendMessage?: (message: string) => void;
-}
-
-export const ChatInput = ({ onSendMessage }: ChatInputProps) => {
+export const ChatInput = () => {
   const [message, setMessage] = useState("");
+  const { send } = useChat();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
-      onSendMessage?.(message);
+      await send(message);
       setMessage("");
     }
   };
@@ -26,8 +24,8 @@ export const ChatInput = ({ onSendMessage }: ChatInputProps) => {
         placeholder="Send message..."
         className="flex-1 h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white placeholder:text-white/60 focus-visible:ring-1 focus-visible:ring-white/40 focus-visible:border-white/50 focus-visible:bg-white/15 rounded-full"
       />
-      <Button 
-        type="submit" 
+      <Button
+        type="submit"
         size="icon"
         className="h-9 w-9 bg-white/90 hover:bg-white text-black rounded-full"
         disabled={!message.trim()}
