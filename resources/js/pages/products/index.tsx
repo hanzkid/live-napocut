@@ -1,0 +1,637 @@
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/livestream/ui/table';
+import AppLayout from '@/layouts/app-layout';
+import { index as productsIndexRoute, store as productsStoreRoute, update as productsUpdateRoute, destroy as productsDestroyRoute, importFromUrl as productsImportFromUrlRoute } from '@/routes/products';
+import { destroy as deleteImageRoute } from '@/routes/product-images';
+import { type BreadcrumbItem } from '@/types';
+import { Head, useForm, router } from '@inertiajs/react';
+import {
+    type ColumnDef,
+    type ColumnFiltersState,
+    type SortingState,
+    flexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
+import { ArrowUpDown, Plus, Pencil, Trash2, X, ImagePlus, Link } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+
+type ProductImage = {
+    id: number;
+    url: string;
+    order: number;
+};
+
+type ProductRecord = {
+    id: number;
+    name: string;
+    description: string | null;
+    price: string;
+    link: string | null;
+    images: ProductImage[];
+    created_at: string;
+};
+
+interface ProductsIndexProps {
+    products: ProductRecord[];
+}
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Products',
+        href: productsIndexRoute().url,
+    },
+];
+
+export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
+    const [rows, setRows] = useState<ProductRecord[]>(products);
+    const [sorting, setSorting] = useState<SortingState>([
+        {
+            id: 'created_at',
+            desc: true,
+        },
+    ]);
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [importUrl, setImportUrl] = useState('');
+    const [isImporting, setIsImporting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const { data, setData, post, processing, errors, reset } = useForm<{
+        name: string;
+        description: string;
+        price: string;
+        link: string;
+        images: File[];
+    }>({
+        name: '',
+        description: '',
+        price: '',
+        link: '',
+        images: [],
+    });
+
+    useEffect(() => {
+        setRows(products);
+    }, [products]);
+
+    const columns: ColumnDef<ProductRecord>[] = [
+        {
+            accessorKey: 'name',
+            header: () => <span className="text-sm font-semibold">Product</span>,
+            cell: ({ row }) => (
+                <div className="flex items-center gap-3">
+                    {row.original.images[0] ? (
+                        <img
+                            src={row.original.images[0].url}
+                            alt={row.original.name}
+                            className="h-12 w-12 rounded object-cover"
+                        />
+                    ) : (
+                        <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
+                            <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                    )}
+                    <div className="flex flex-col">
+                        <span className="font-medium text-foreground">{row.original.name}</span>
+                        {row.original.description && (
+                            <span className="text-sm text-muted-foreground line-clamp-1">
+                                {row.original.description}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            ),
+            enableSorting: true,
+        },
+        {
+            accessorKey: 'price',
+            header: () => <span className="text-sm font-semibold">Price</span>,
+            cell: ({ row }) => (
+                <span className="font-medium">${parseFloat(row.original.price).toFixed(2)}</span>
+            ),
+        },
+        {
+            accessorKey: 'images',
+            header: () => <span className="text-sm font-semibold">Images</span>,
+            cell: ({ row }) => (
+                <span className="text-sm text-muted-foreground">{row.original.images.length} image(s)</span>
+            ),
+        },
+        {
+            id: 'actions',
+            header: () => <span className="text-sm font-semibold">Actions</span>,
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(row.original)}
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(row.original.id)}
+                    >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                </div>
+            ),
+        },
+    ];
+
+    const table = useReactTable({
+        data: rows,
+        columns,
+        state: {
+            sorting,
+            columnFilters,
+        },
+        onSortingChange: setSorting,
+        onColumnFiltersChange: setColumnFilters,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        initialState: {
+            pagination: {
+                pageSize: 10,
+            },
+        },
+    });
+
+    const filteredCount = table.getFilteredRowModel().rows.length;
+    const totalCount = rows.length;
+    const nameFilterValue = (table.getColumn('name')?.getFilterValue() as string) ?? '';
+
+    const handleCreate = () => {
+        setEditingProduct(null);
+        reset();
+        setImagePreviews([]);
+        setIsDialogOpen(true);
+    };
+
+    const handleEdit = (product: ProductRecord) => {
+        setEditingProduct(product);
+        setData({
+            name: product.name,
+            description: product.description || '',
+            price: product.price,
+            link: product.link || '',
+            images: [],
+        });
+        setImagePreviews(product.images.map(img => img.url));
+        setIsDialogOpen(true);
+    };
+
+    const handleDelete = (id: number) => {
+        if (confirm('Are you sure you want to delete this product?')) {
+            router.delete(productsDestroyRoute({ product: id }).url, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success('Product deleted successfully');
+                },
+            });
+        }
+    };
+
+    const handleDeleteImage = (imageId: number) => {
+        if (confirm('Are you sure you want to delete this image?')) {
+            router.delete(deleteImageRoute({ image: imageId }).url, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success('Image deleted successfully');
+                    if (editingProduct) {
+                        setEditingProduct({
+                            ...editingProduct,
+                            images: editingProduct.images.filter(img => img.id !== imageId),
+                        });
+                        setImagePreviews(prev => prev.filter((_, idx) =>
+                            editingProduct.images[idx]?.id !== imageId
+                        ));
+                    }
+                },
+            });
+        }
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length > 0) {
+            setData('images', [...data.images, ...files]);
+
+            // Create previews
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setImagePreviews(prev => [...prev, reader.result as string]);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    };
+
+    const removeNewImage = (index: number) => {
+        const existingImagesCount = editingProduct?.images.length || 0;
+        const newImageIndex = index - existingImagesCount;
+
+        if (newImageIndex >= 0) {
+            setData('images', data.images.filter((_, i) => i !== newImageIndex));
+            setImagePreviews(prev => prev.filter((_, i) => i !== index));
+        }
+    };
+
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        const formData = new FormData();
+        formData.append('name', data.name);
+        formData.append('description', data.description);
+        formData.append('price', data.price);
+        formData.append('link', data.link);
+
+        data.images.forEach((image, index) => {
+            formData.append(`images[${index}]`, image);
+        });
+
+        if (editingProduct) {
+            formData.append('_method', 'PUT');
+            router.post(productsUpdateRoute({ product: editingProduct.id }).url, formData, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setIsDialogOpen(false);
+                    reset();
+                    setImagePreviews([]);
+                    toast.success('Product updated successfully');
+                },
+            });
+        } else {
+            router.post(productsStoreRoute().url, formData, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setIsDialogOpen(false);
+                    reset();
+                    setImagePreviews([]);
+                    toast.success('Product created successfully');
+                },
+            });
+        }
+    };
+
+    const closeDialog = () => {
+        setIsDialogOpen(false);
+        reset();
+        setImagePreviews([]);
+        setEditingProduct(null);
+    };
+
+    const handleImportFromUrl = () => {
+        setImportUrl('');
+        setIsImportDialogOpen(true);
+    };
+
+    const handleImportSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setIsImporting(true);
+
+        const formData = new FormData();
+        formData.append('url', importUrl);
+
+        router.post(productsImportFromUrlRoute().url, formData, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsImportDialogOpen(false);
+                setImportUrl('');
+                toast.success('Product imported successfully');
+            },
+            onError: (errors) => {
+                const errorMessage = errors.url || 'Failed to import product';
+                toast.error(errorMessage);
+            },
+            onFinish: () => {
+                setIsImporting(false);
+            },
+        });
+    };
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Products" />
+            <div className="flex flex-1 flex-col gap-6 p-6">
+                <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
+                        <p className="text-muted-foreground">
+                            Manage products that can be featured in livestreams.
+                        </p>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                        <Button variant="outline" className="w-full sm:w-auto" onClick={handleImportFromUrl}>
+                            <Link className="size-4" />
+                            Create from Link
+                        </Button>
+                        <Button className="w-full sm:w-auto" onClick={handleCreate}>
+                            <Plus className="size-4" />
+                            Create Product
+                        </Button>
+                    </div>
+                </header>
+
+                <Card className="border border-sidebar-border/70 shadow-none">
+                    <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <div />
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <Input
+                                className="w-full min-w-[220px]"
+                                placeholder="Search by name…"
+                                value={nameFilterValue}
+                                onChange={(event) =>
+                                    table.getColumn('name')?.setFilterValue(event.target.value)
+                                }
+                            />
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="px-0 sm:px-0">
+                        <div className="overflow-hidden rounded-lg border border-border/60">
+                            <Table>
+                                <TableHeader>
+                                    {table.getHeaderGroups().map((headerGroup) => (
+                                        <TableRow key={headerGroup.id}>
+                                            {headerGroup.headers.map((header) => (
+                                                <TableHead key={header.id}>
+                                                    {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={header.column.getToggleSortingHandler()}
+                                                            className="flex items-center gap-2 text-sm font-semibold text-foreground"
+                                                        >
+                                                            {flexRender(
+                                                                header.column.columnDef.header,
+                                                                header.getContext(),
+                                                            )}
+                                                            <ArrowUpDown className="size-4 text-muted-foreground" />
+                                                        </button>
+                                                    ) : (
+                                                        flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext(),
+                                                        )
+                                                    )}
+                                                </TableHead>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableHeader>
+
+                                <TableBody>
+                                    {table.getRowModel().rows.length ? (
+                                        table.getRowModel().rows.map((row) => (
+                                            <TableRow key={row.id}>
+                                                {row.getVisibleCells().map((cell) => (
+                                                    <TableCell key={cell.id}>
+                                                        {flexRender(
+                                                            cell.column.columnDef.cell,
+                                                            cell.getContext(),
+                                                        )}
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={columns.length}
+                                                className="h-32 text-center text-sm text-muted-foreground"
+                                            >
+                                                No products found
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+
+                    <CardFooter className="flex flex-col gap-4 border-t border-sidebar-border/60 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-muted-foreground">
+                            Showing {filteredCount} of {totalCount} product
+                            {totalCount === 1 ? '' : 's'}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => table.previousPage()}
+                                disabled={!table.getCanPreviousPage()}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => table.nextPage()}
+                                disabled={!table.getCanNextPage()}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    </CardFooter>
+                </Card>
+            </div>
+
+            {/* Create/Edit Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={(open) => (open ? setIsDialogOpen(true) : closeDialog())}>
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>{editingProduct ? 'Edit Product' : 'Create Product'}</DialogTitle>
+                        <DialogDescription>
+                            {editingProduct ? 'Update product information and images.' : 'Add a new product with images.'}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form className="space-y-4" onSubmit={handleSubmit}>
+                        <div className="space-y-2">
+                            <Label htmlFor="product-name">Name</Label>
+                            <Input
+                                id="product-name"
+                                placeholder="Product name"
+                                value={data.name}
+                                onChange={(e) => setData('name', e.target.value)}
+                                disabled={processing}
+                                required
+                            />
+                            {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="product-description">Description</Label>
+                            <Textarea
+                                id="product-description"
+                                placeholder="Product description"
+                                value={data.description}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setData('description', e.target.value)}
+                                disabled={processing}
+                                rows={3}
+                            />
+                            {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="product-price">Price</Label>
+                                <Input
+                                    id="product-price"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0.00"
+                                    value={data.price}
+                                    onChange={(e) => setData('price', e.target.value)}
+                                    disabled={processing}
+                                    required
+                                />
+                                {errors.price && <p className="text-sm text-destructive">{errors.price}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="product-link">Link (Optional)</Label>
+                                <Input
+                                    id="product-link"
+                                    type="url"
+                                    placeholder="https://example.com"
+                                    value={data.link}
+                                    onChange={(e) => setData('link', e.target.value)}
+                                    disabled={processing}
+                                />
+                                {errors.link && <p className="text-sm text-destructive">{errors.link}</p>}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Images</Label>
+                            <div className="grid grid-cols-3 gap-4">
+                                {imagePreviews.map((preview, index) => (
+                                    <div key={index} className="relative group">
+                                        <img
+                                            src={preview}
+                                            alt={`Preview ${index + 1}`}
+                                            className="w-full h-32 object-cover rounded border"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="icon"
+                                            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={() => {
+                                                if (editingProduct && index < editingProduct.images.length) {
+                                                    handleDeleteImage(editingProduct.images[index].id);
+                                                } else {
+                                                    removeNewImage(index);
+                                                }
+                                            }}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="w-full h-32 border-2 border-dashed rounded flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors"
+                                    disabled={processing}
+                                >
+                                    <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">Add Image</span>
+                                </button>
+                            </div>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                onChange={handleImageChange}
+                            />
+                            {errors.images && <p className="text-sm text-destructive">{errors.images}</p>}
+                        </div>
+
+                        <DialogFooter className="gap-2 sm:space-x-2">
+                            <Button type="button" variant="ghost" onClick={closeDialog} disabled={processing}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={processing}>
+                                {processing ? 'Saving…' : editingProduct ? 'Update Product' : 'Create Product'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Import from URL Dialog */}
+            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Import Product from URL</DialogTitle>
+                        <DialogDescription>
+                            Enter a product URL to automatically import product details and images.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form className="space-y-4" onSubmit={handleImportSubmit}>
+                        <div className="space-y-2">
+                            <Label htmlFor="import-url">Product URL</Label>
+                            <Input
+                                id="import-url"
+                                type="url"
+                                placeholder="https://example.com/products/123"
+                                value={importUrl}
+                                onChange={(e) => setImportUrl(e.target.value)}
+                                disabled={isImporting}
+                                required
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                The URL should contain product information in JSON-LD format.
+                            </p>
+                        </div>
+
+                        <DialogFooter className="gap-2 sm:space-x-2">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setIsImportDialogOpen(false)}
+                                disabled={isImporting}
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isImporting}>
+                                {isImporting ? 'Importing…' : 'Import Product'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </AppLayout>
+    );
+}

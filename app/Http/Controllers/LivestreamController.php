@@ -20,10 +20,20 @@ class LivestreamController extends Controller
             'stream_key',
             'is_active',
             'created_at',
-        ])->latest()->get();
+        ])->with('products.images')->latest()->get();
+
+        $allProducts = \App\Models\Product::with('images')->get()->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+                'image' => $product->images->first()?->url,
+            ];
+        });
 
         return Inertia::render('livestream/index', [
             'streams' => $streams,
+            'allProducts' => $allProducts,
         ]);
     }
 
@@ -31,6 +41,8 @@ class LivestreamController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'product_ids' => ['nullable', 'array'],
+            'product_ids.*' => ['exists:products,id'],
         ]);
 
         $streamData = Livekit::createRoom($validated['title']);
@@ -42,6 +54,11 @@ class LivestreamController extends Controller
             'ingress_id' => $streamData['ingress_id'],
             's3_path' => $streamData['s3_path'],
         ]);
+
+        // Sync products if provided
+        if (!empty($validated['product_ids'])) {
+            $livestream->products()->sync($validated['product_ids']);
+        }
 
         return redirect()
             ->route('livestream.index')

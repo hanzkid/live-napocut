@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\FrontController;
 use App\Http\Controllers\LivekitWebhookController;
 use App\Http\Controllers\LivestreamController;
+use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/webhooks/livekit', [LivekitWebhookController::class, 'handle'])->name('webhooks.livekit');
@@ -11,9 +12,12 @@ Route::post('/webhooks/livekit', [LivekitWebhookController::class, 'handle'])->n
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::resource('livestream', LivestreamController::class)->names('livestream');
+    Route::resource('products', ProductController::class)->except(['show', 'create', 'edit']);
+    Route::post('products/import-from-url', [ProductController::class, 'importFromUrl'])->name('products.import-from-url');
+    Route::delete('product-images/{image}', [ProductController::class, 'deleteImage'])->name('product-images.destroy');
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';
 
 Route::get('/', [FrontController::class, 'livestream'])->name('live');
 

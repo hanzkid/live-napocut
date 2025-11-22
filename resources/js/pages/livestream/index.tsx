@@ -31,6 +31,13 @@ import { ArrowUpDown, Copy, Plus, CheckCircle2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { usePage } from '@inertiajs/react';
 
+type ProductOption = {
+    id: number;
+    name: string;
+    price: string;
+    image: string | null;
+};
+
 type LivestreamRecord = {
     id: number;
     title: string | null;
@@ -38,10 +45,12 @@ type LivestreamRecord = {
     stream_key: string | null;
     created_at: string;
     updated_at: string;
+    products?: ProductOption[];
 };
 
 interface LivestreamIndexProps {
     streams: LivestreamRecord[];
+    allProducts: ProductOption[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -122,7 +131,7 @@ const columns: ColumnDef<LivestreamRecord>[] = [
     },
 ];
 
-export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) {
+export default function LivestreamIndex({ streams = [], allProducts = [] }: LivestreamIndexProps) {
     const [rows, setRows] = useState<LivestreamRecord[]>(streams);
     const [sorting, setSorting] = useState<SortingState>([
         {
@@ -134,8 +143,9 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
     const [createdStreamData, setCreatedStreamData] = useState<{ ws_url: string; stream_key: string } | null>(null);
-    const { data, setData, post, processing, errors, reset } = useForm<{ title: string }>({
+    const { data, setData, post, processing, errors, reset } = useForm<{ title: string; product_ids: number[] }>({
         title: '',
+        product_ids: [],
     });
     const page = usePage<{ flash: { createdStream?: { ws_url: string; stream_key: string } } }>();
 
@@ -350,6 +360,54 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
                             />
                             {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
                         </div>
+
+                        {allProducts.length > 0 && (
+                            <div className="space-y-2">
+                                <Label>Products (Optional)</Label>
+                                <p className="text-sm text-muted-foreground">Select products to feature in this livestream</p>
+                                <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-1">
+                                    {allProducts.map((product) => (
+                                        <button
+                                            key={product.id}
+                                            type="button"
+                                            onClick={() => {
+                                                const isSelected = data.product_ids.includes(product.id);
+                                                if (isSelected) {
+                                                    setData('product_ids', data.product_ids.filter(id => id !== product.id));
+                                                } else {
+                                                    setData('product_ids', [...data.product_ids, product.id]);
+                                                }
+                                            }}
+                                            className={`flex items-center gap-2 p-2 rounded-lg border-2 transition-all text-left ${data.product_ids.includes(product.id)
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'border-border hover:border-primary/50'
+                                                }`}
+                                        >
+                                            {product.image ? (
+                                                <img
+                                                    src={product.image}
+                                                    alt={product.name}
+                                                    className="h-12 w-12 rounded object-cover flex-shrink-0"
+                                                />
+                                            ) : (
+                                                <div className="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                                                    <span className="text-xs text-muted-foreground">No img</span>
+                                                </div>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-sm truncate">{product.name}</p>
+                                                <p className="text-xs text-muted-foreground">${parseFloat(product.price).toFixed(2)}</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                                {data.product_ids.length > 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        {data.product_ids.length} product(s) selected
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         <DialogFooter className="gap-2 sm:space-x-2">
                             <Button type="button" variant="ghost" onClick={closeDialog} disabled={processing}>

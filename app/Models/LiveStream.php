@@ -14,4 +14,9 @@ class LiveStream extends Model
         's3_path',
         'is_active',
     ];
+
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'livestream_product');
+    }
 }
