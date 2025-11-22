@@ -376,34 +376,16 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Products" />
             <div className="flex flex-1 flex-col gap-6 p-6">
-                <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
-                        <p className="text-muted-foreground">
-                            Manage products that can be featured in livestreams.
-                        </p>
-                    </div>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button variant="outline" className="w-full sm:w-auto" onClick={handleImportFromUrl}>
-                            <Link className="size-4" />
-                            Create from Link
-                        </Button>
-                        <Button className="w-full sm:w-auto" onClick={handleCreate}>
-                            <Plus className="size-4" />
-                            Create Product
-                        </Button>
-                    </div>
+                <header className="flex flex-col gap-3">
+                    <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
+                    <p className="text-muted-foreground">
+                        Manage products that can be featured in livestreams.
+                    </p>
                 </header>
 
-                <Card className="shadow-sm border-border/50">
-                    <CardHeader className="border-b bg-muted/30">
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <h2 className="text-lg font-semibold">All Products</h2>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    {filteredCount} of {totalCount} products
-                                </p>
-                            </div>
+                <Card className="shadow-none border-0">
+                    <CardContent className="p-0">
+                        <div className="pb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                             <Input
                                 className="w-full sm:w-[300px]"
                                 placeholder="Search products..."
@@ -412,11 +394,18 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
                                     table.getColumn('name')?.setFilterValue(event.target.value)
                                 }
                             />
+                            <div className="flex gap-2">
+                                <Button variant="outline" className="w-full sm:w-auto" onClick={handleImportFromUrl}>
+                                    <Link className="size-4" />
+                                    Create from Link
+                                </Button>
+                                <Button className="w-full sm:w-auto" onClick={handleCreate}>
+                                    <Plus className="size-4" />
+                                    Create Product
+                                </Button>
+                            </div>
                         </div>
-                    </CardHeader>
-
-                    <CardContent className="px-0 sm:px-0">
-                        <div className="overflow-hidden rounded-lg border border-border/60">
+                        <div className="overflow-hidden">
                             <Table>
                                 <TableHeader>
                                     {table.getHeaderGroups().map((headerGroup) => (

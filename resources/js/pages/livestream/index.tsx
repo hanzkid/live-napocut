@@ -290,30 +290,25 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
                             Manage access credentials for your LiveKit rooms.
                         </p>
                     </div>
-                    <Button className="w-full sm:w-auto" onClick={() => setIsDialogOpen(true)}>
-                        <Plus className="size-4" />
-                        Create Livestream
-                    </Button>
                 </header>
 
-                <Card className="border border-sidebar-border/70 shadow-none">
-                    <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                        <div />
-
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Card className="shadow-none border-0">
+                    <CardContent className="p-0">
+                        <div className="pb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                             <Input
-                                className="w-full min-w-[220px]"
-                                placeholder="Search by title…"
+                                className="w-full sm:w-[300px]"
+                                placeholder="Search streams..."
                                 value={titleFilterValue}
                                 onChange={(event) =>
                                     table.getColumn('title')?.setFilterValue(event.target.value)
                                 }
                             />
+                            <Button className="w-full sm:w-auto" onClick={() => setIsDialogOpen(true)}>
+                                <Plus className="size-4" />
+                                Create Stream
+                            </Button>
                         </div>
-                    </CardHeader>
-
-                    <CardContent className="px-0 sm:px-0">
-                        <div className="overflow-hidden rounded-lg border border-border/60">
+                        <div className="overflow-hidden">
                             <Table>
                                 <TableHeader>
                                     {table.getHeaderGroups().map((headerGroup) => (
