@@ -63,18 +63,17 @@ export const ProductCarousel = ({ products, onProductClick }: ProductCarouselPro
             {currentProduct.name.split(" ").slice(0, 6).join(" ")}...
           </p>
           <p className="text-white text-sm sm:text-base font-bold">
-            ${currentProduct.price.toLocaleString()}.00
+            ${currentProduct.formatted_price || currentProduct.price.toLocaleString()}
           </p>
         </div>
 
         <Button
           variant="ghost"
           size="icon"
-          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex-shrink-0 transition-all ${
-            selectedProducts.has(currentProduct.id)
-              ? "bg-white text-black"
-              : "bg-white/10 hover:bg-white/20 text-white"
-          }`}
+          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex-shrink-0 transition-all ${selectedProducts.has(currentProduct.id)
+            ? "bg-white text-black"
+            : "bg-white/10 hover:bg-white/20 text-white"
+            }`}
           onClick={(e) => toggleSelect(currentProduct.id, e)}
         >
           <Check className="w-4 h-4 sm:w-5 sm:h-5" />
