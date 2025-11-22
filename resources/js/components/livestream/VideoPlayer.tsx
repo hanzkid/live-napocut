@@ -1,32 +1,90 @@
-import { useTracks, useParticipants } from "@livekit/components-react";
-import { Track } from "livekit-client";
+import { useEffect, useRef } from "react";
+import { useParticipants } from "@livekit/components-react";
+import Hls from "hls.js";
 import { Eye } from "lucide-react";
 import { Badge } from "@/components/livestream/ui/badge";
 
-export const VideoPlayer = () => {
-  const tracks = useTracks([Track.Source.Camera], {
-    onlySubscribed: false,
-  });
+interface VideoPlayerProps {
+  hlsUrl: string | null;
+}
+
+export const VideoPlayer = ({ hlsUrl }: VideoPlayerProps) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
   const participants = useParticipants();
   const liveViewers = participants.length;
 
-  // Get the first camera track (broadcaster's video)
-  const videoTrack = tracks.find((track) => track.source === Track.Source.Camera);
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !hlsUrl) return;
+
+    // Check if HLS is supported
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        backBufferLength: 90,
+      });
+
+      hls.loadSource(hlsUrl);
+      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        video.play().catch((error) => {
+          console.error("Error playing video:", error);
+        });
+      });
+
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.error("Network error, trying to recover...");
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.error("Media error, trying to recover...");
+              hls.recoverMediaError();
+              break;
+            default:
+              console.error("Fatal error, cannot recover");
+              hls.destroy();
+              break;
+          }
+        }
+      });
+
+      hlsRef.current = hls;
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      // For Safari, which has native HLS support
+      video.src = hlsUrl;
+      video.addEventListener("loadedmetadata", () => {
+        video.play().catch((error) => {
+          console.error("Error playing video:", error);
+        });
+      });
+    }
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, [hlsUrl]);
 
   return (
     <div className="relative w-full h-full bg-black">
       {/* Video Element */}
       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-        {videoTrack ? (
+        {hlsUrl ? (
           <video
-            ref={(el) => {
-              if (el && videoTrack.publication.track) {
-                videoTrack.publication.track.attach(el);
-              }
-            }}
+            ref={videoRef}
             className="w-full h-full object-cover"
             autoPlay
             playsInline
+            muted
+            controls={false}
           />
         ) : (
           <div className="flex flex-col items-center justify-center gap-4">

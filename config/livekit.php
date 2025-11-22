@@ -11,4 +11,5 @@ return [
     's3_access_key' => env('LIVEKIT_S3_ACCESS_KEY'),
     's3_secret' => env('LIVEKIT_S3_SECRET'),
     's3_endpoint' => env('LIVEKIT_S3_ENDPOINT'),
+    's3_public_url' => env('LIVEKIT_S3_PUBLIC_URL'),
 ];

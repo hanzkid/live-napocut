@@ -53,13 +53,19 @@ const products: Product[] = [
     description: "Louis Vuitton Neverfull MM Monogram Canvas"
   },
 ];
-const Index = (props: { livekit_ws_url: string; livekit_token: string | null }) => {
+const Index = (props: {
+  livekit_ws_url: string;
+  livekit_token: string | null;
+  room_name: string | null;
+  hls_url: string | null;
+  is_active: boolean;
+}) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [viewerName, setViewerName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const livekit_token = props.livekit_token;
-  const showNameDialog = !livekit_token;
+  const showNameDialog = !livekit_token && props.is_active;
 
   const handleNameSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -91,7 +97,14 @@ const Index = (props: { livekit_ws_url: string; livekit_token: string | null }) 
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
-      {livekit_token ? (
+      {!props.is_active ? (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white mb-2">No Active Stream</h2>
+            <p className="text-white/60">There is no livestream currently active. Please check back later.</p>
+          </div>
+        </div>
+      ) : livekit_token ? (
         <LiveKitRoom
           serverUrl={props.livekit_ws_url}
           token={livekit_token}
@@ -99,7 +112,7 @@ const Index = (props: { livekit_ws_url: string; livekit_token: string | null }) 
           className="relative w-full h-full"
         >
           {/* Video Player */}
-          <VideoPlayer />
+          <VideoPlayer hlsUrl={props.hls_url} />
 
           {/* Chat Overlay */}
           <div className="absolute bottom-44 left-4 right-4 z-20">

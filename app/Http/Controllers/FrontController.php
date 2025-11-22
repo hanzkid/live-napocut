@@ -16,9 +16,21 @@ class FrontController extends Controller
         $livekit = config('livekit');
         $token = session('livekit_token');
 
+        $activeStream = \App\Models\LiveStream::where('is_active', true)
+            ->latest()
+            ->first();
+
+        $hlsUrl = null;
+        if ($activeStream && $activeStream->s3_path) {
+            $hlsUrl = config('livekit.s3_public_url') . '/' . $activeStream->s3_path;
+        }
+
         return Inertia::render('live', [
             'livekit_ws_url' => $livekit['ws_url'],
             'livekit_token' => $token,
+            'room_name' => $activeStream?->title,
+            'hls_url' => $hlsUrl,
+            'is_active' => $activeStream?->is_active ?? false,
         ]);
     }
 
@@ -29,7 +41,17 @@ class FrontController extends Controller
             'name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $roomName = 'name-of-room';
+        $activeStream = \App\Models\LiveStream::where('is_active', true)
+            ->latest()
+            ->first();
+
+        if (!$activeStream) {
+            return redirect()->route('live')->withErrors([
+                'stream' => 'No active livestream available at the moment.'
+            ]);
+        }
+
+        $roomName = $activeStream->title;
         $participantName = $request->input('name') ?: optional($request->user())->name ?: 'Guest';
 
         $tokenOptions = (new AccessTokenOptions)
