@@ -1,5 +1,5 @@
 import { router } from "@inertiajs/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LiveKitRoom } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { VideoPlayer } from "@/components/livestream/VideoPlayer";
@@ -63,6 +63,34 @@ const Index = (props: {
     );
   };
 
+  // Handle product modal with browser history
+  const handleProductClick = (product: Product) => {
+    setSelectedProduct(product);
+    // Push a new history state when opening modal
+    window.history.pushState({ modalOpen: true }, '');
+  };
+
+  const handleCloseModal = () => {
+    setSelectedProduct(null);
+    // Remove the history state if it exists
+    if (window.history.state?.modalOpen) {
+      window.history.back();
+    }
+  };
+
+  // Listen for back button
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // Close modal when back button is pressed
+      if (selectedProduct) {
+        setSelectedProduct(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [selectedProduct]);
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
       {!props.is_active ? (
@@ -96,7 +124,7 @@ const Index = (props: {
           <div className="absolute bottom-0 left-0 right-0 z-20">
             <ProductCarousel
               products={props.products}
-              onProductClick={setSelectedProduct}
+              onProductClick={handleProductClick}
             />
           </div>
 
@@ -104,7 +132,7 @@ const Index = (props: {
           {selectedProduct && (
             <ProductModal
               product={selectedProduct}
-              onClose={() => setSelectedProduct(null)}
+              onClose={handleCloseModal}
             />
           )}
         </LiveKitRoom>
