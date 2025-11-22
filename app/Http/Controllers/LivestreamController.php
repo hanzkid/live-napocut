@@ -89,4 +89,27 @@ class LivestreamController extends Controller
                 'stream_key' => $livestream->stream_key,
             ]);
     }
+
+    public function attachProduct(Request $request, LiveStream $livestream)
+    {
+        $validated = $request->validate([
+            'product_id' => ['required', 'exists:products,id'],
+        ]);
+
+        // Check if product is already attached
+        if ($livestream->products()->where('product_id', $validated['product_id'])->exists()) {
+            return response()->json(['message' => 'Product already attached'], 400);
+        }
+
+        $livestream->products()->attach($validated['product_id']);
+
+        return response()->json(['message' => 'Product attached successfully']);
+    }
+
+    public function detachProduct(LiveStream $livestream, int $productId)
+    {
+        $livestream->products()->detach($productId);
+
+        return response()->json(['message' => 'Product removed successfully']);
+    }
 }

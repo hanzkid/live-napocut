@@ -5,9 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import AppLayout from '@/layouts/app-layout';
 import { show as livestreamShowRoute, index as livestreamIndexRoute } from '@/routes/livestream';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
-import { Copy, ExternalLink } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { Copy, ExternalLink, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/livestream/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+import axios from 'axios';
 
 type ProductOption = {
     id: number;
@@ -36,6 +42,12 @@ interface LivestreamShowProps {
 }
 
 export default function LivestreamShow({ livestream }: LivestreamShowProps) {
+    const [products, setProducts] = useState<ProductOption[]>(livestream.products);
+    const [productComboboxOpen, setProductComboboxOpen] = useState(false);
+    const [productSearchQuery, setProductSearchQuery] = useState('');
+    const [searchedProducts, setSearchedProducts] = useState<ProductOption[]>([]);
+    const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+    const [isAddingProduct, setIsAddingProduct] = useState(false);
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Livestreams',
@@ -63,6 +75,73 @@ export default function LivestreamShow({ livestream }: LivestreamShowProps) {
     const maskStreamKey = (key: string) => {
         if (key.length <= 8) return key;
         return `${key.slice(0, 4)}••••${key.slice(-4)}`;
+    };
+
+    // Fetch products from server with debouncing
+    useEffect(() => {
+        const fetchProducts = async () => {
+            setIsLoadingProducts(true);
+            try {
+                const response = await axios.get('/products-search', {
+                    params: {
+                        q: productSearchQuery,
+                        limit: 10,
+                    },
+                });
+                setSearchedProducts(response.data);
+            } catch (error) {
+                console.error('Failed to fetch products:', error);
+                setSearchedProducts([]);
+            } finally {
+                setIsLoadingProducts(false);
+            }
+        };
+
+        const timeoutId = setTimeout(() => {
+            if (productComboboxOpen) {
+                fetchProducts();
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [productSearchQuery, productComboboxOpen]);
+
+    const handleAddProduct = async (productId: number) => {
+        if (products.some(p => p.id === productId)) {
+            toast.error('Product already added to this livestream');
+            return;
+        }
+
+        setIsAddingProduct(true);
+        try {
+            await axios.post(`/livestream/${livestream.id}/products`, {
+                product_id: productId,
+            });
+
+            const addedProduct = searchedProducts.find(p => p.id === productId);
+            if (addedProduct) {
+                setProducts([...products, addedProduct]);
+                toast.success('Product added successfully');
+                setProductComboboxOpen(false);
+                setProductSearchQuery('');
+            }
+        } catch (error) {
+            console.error('Failed to add product:', error);
+            toast.error('Failed to add product');
+        } finally {
+            setIsAddingProduct(false);
+        }
+    };
+
+    const handleRemoveProduct = async (productId: number) => {
+        try {
+            await axios.delete(`/livestream/${livestream.id}/products/${productId}`);
+            setProducts(products.filter(p => p.id !== productId));
+            toast.success('Product removed successfully');
+        } catch (error) {
+            console.error('Failed to remove product:', error);
+            toast.error('Failed to remove product');
+        }
     };
 
     return (
@@ -168,60 +247,150 @@ export default function LivestreamShow({ livestream }: LivestreamShowProps) {
                     </TabsList>
 
                     <TabsContent value="products" className="space-y-4">
-                        {livestream.products.length > 0 ? (
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {livestream.products.map((product) => (
-                                    <Card key={product.id} className="overflow-hidden">
-                                        <div className="aspect-square bg-muted">
-                                            {product.image ? (
-                                                <img
-                                                    src={product.image}
-                                                    alt={product.name}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="flex h-full items-center justify-center">
-                                                    <span className="text-sm text-muted-foreground">No image</span>
+                        <div className="flex justify-between items-center">
+                            <p className="text-sm text-muted-foreground">
+                                {products.length} product{products.length !== 1 ? 's' : ''} attached
+                            </p>
+
+                            {/* Add Product Combobox */}
+                            <Popover open={productComboboxOpen} onOpenChange={setProductComboboxOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Product
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[300px] p-0" align="end">
+                                    <Command shouldFilter={false}>
+                                        <CommandInput
+                                            placeholder="Search products..."
+                                            value={productSearchQuery}
+                                            onValueChange={setProductSearchQuery}
+                                        />
+                                        <CommandList>
+                                            {isLoadingProducts ? (
+                                                <div className="py-6 text-center text-sm text-muted-foreground">
+                                                    Loading...
                                                 </div>
-                                            )}
-                                        </div>
-                                        <CardContent className="p-4">
-                                            <h3 className="font-semibold truncate">{product.name}</h3>
-                                            {product.description && (
-                                                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                                                    {product.description}
-                                                </p>
-                                            )}
-                                            <div className="mt-2 flex items-center justify-between">
-                                                <span className="text-lg font-bold">
-                                                    ${parseFloat(product.price).toFixed(2)}
-                                                </span>
-                                                {product.link && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        asChild
-                                                    >
-                                                        <a
-                                                            href={product.link}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
+                                            ) : searchedProducts.length === 0 ? (
+                                                <CommandEmpty>
+                                                    {productSearchQuery ? 'No products found.' : 'Start typing to search...'}
+                                                </CommandEmpty>
+                                            ) : (
+                                                <CommandGroup>
+                                                    {searchedProducts.map((product) => (
+                                                        <CommandItem
+                                                            key={product.id}
+                                                            value={product.id.toString()}
+                                                            onSelect={() => handleAddProduct(product.id)}
+                                                            disabled={isAddingProduct}
                                                         >
-                                                            <ExternalLink className="h-4 w-4" />
-                                                        </a>
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
+                                                            <div className="flex items-center gap-2 flex-1">
+                                                                {product.image ? (
+                                                                    <img
+                                                                        src={product.image}
+                                                                        alt={product.name}
+                                                                        className="h-8 w-8 rounded object-cover"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+                                                                        <span className="text-xs">No img</span>
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="font-medium text-sm truncate">{product.name}</p>
+                                                                    <p className="text-xs text-muted-foreground">${parseFloat(product.price).toFixed(2)}</p>
+                                                                </div>
+                                                            </div>
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            )}
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        {products.length > 0 ? (
+                            <Card>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[80px]">Image</TableHead>
+                                            <TableHead>Name</TableHead>
+                                            <TableHead>Price</TableHead>
+                                            <TableHead className="w-[100px]">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {products.map((product) => (
+                                            <TableRow key={product.id}>
+                                                <TableCell>
+                                                    {product.image ? (
+                                                        <img
+                                                            src={product.image}
+                                                            alt={product.name}
+                                                            className="h-12 w-12 rounded object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
+                                                            <span className="text-xs text-muted-foreground">No image</span>
+                                                        </div>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div>
+                                                        <p className="font-medium">{product.name}</p>
+                                                        {product.description && (
+                                                            <p className="text-sm text-muted-foreground line-clamp-1">
+                                                                {product.description.replace(/<[^>]*>/g, '')}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="font-semibold">${parseFloat(product.price).toFixed(2)}</span>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        {product.link && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                asChild
+                                                            >
+                                                                <a
+                                                                    href={product.link}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    title="View product"
+                                                                >
+                                                                    <ExternalLink className="h-4 w-4" />
+                                                                </a>
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleRemoveProduct(product.id)}
+                                                            title="Remove product"
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </Card>
                         ) : (
                             <Card>
                                 <CardContent className="flex flex-col items-center justify-center py-12">
                                     <p className="text-muted-foreground mb-4">No products attached to this livestream</p>
                                     <p className="text-sm text-muted-foreground">
-                                        Products can be added when creating or editing a livestream
+                                        Click "Add Product" to attach products
                                     </p>
                                 </CardContent>
                             </Card>

@@ -16,6 +16,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('products-search', [ProductController::class, 'search'])->name('products.search');
     Route::post('products/import-from-url', [ProductController::class, 'importFromUrl'])->name('products.import-from-url');
     Route::delete('product-images/{image}', [ProductController::class, 'deleteImage'])->name('product-images.destroy');
+    Route::post('livestream/{livestream}/products', [LivestreamController::class, 'attachProduct'])->name('livestream.products.attach');
+    Route::delete('livestream/{livestream}/products/{product}', [LivestreamController::class, 'detachProduct'])->name('livestream.products.detach');
 });
 
 require __DIR__ . '/settings.php';
