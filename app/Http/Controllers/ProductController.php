@@ -39,6 +39,30 @@ class ProductController extends Controller
         ]);
     }
 
+    public function search(Request $request)
+    {
+        $query = $request->input('q', '');
+        $limit = min((int) $request->input('limit', 10), 50); // Max 50 items
+
+        $products = Product::with('images')
+            ->when($query, function ($queryBuilder) use ($query) {
+                $queryBuilder->where('name', 'like', "%{$query}%");
+            })
+            ->latest()
+            ->limit($limit)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => $product->price,
+                    'image' => $product->images->first()?->url,
+                ];
+            });
+
+        return response()->json($products);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([

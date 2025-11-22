@@ -13,6 +13,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::resource('livestream', LivestreamController::class)->names('livestream');
     Route::resource('products', ProductController::class)->except(['show', 'create', 'edit']);
+    Route::get('products-search', [ProductController::class, 'search'])->name('products.search');
     Route::post('products/import-from-url', [ProductController::class, 'importFromUrl'])->name('products.import-from-url');
     Route::delete('product-images/{image}', [ProductController::class, 'deleteImage'])->name('product-images.destroy');
 });

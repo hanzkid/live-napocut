@@ -22,18 +22,8 @@ class LivestreamController extends Controller
             'created_at',
         ])->with('products.images')->latest()->get();
 
-        $allProducts = \App\Models\Product::with('images')->get()->map(function ($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->price,
-                'image' => $product->images->first()?->url,
-            ];
-        });
-
         return Inertia::render('livestream/index', [
             'streams' => $streams,
-            'allProducts' => $allProducts,
         ]);
     }
 
