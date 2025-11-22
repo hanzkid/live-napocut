@@ -27,6 +27,37 @@ class LivestreamController extends Controller
         ]);
     }
 
+    public function show(LiveStream $livestream): Response
+    {
+        $livestream->load('products.images');
+
+        $formattedLivestream = [
+            'id' => $livestream->id,
+            'title' => $livestream->title,
+            'ws_url' => $livestream->ws_url,
+            'stream_key' => $livestream->stream_key,
+            'ingress_id' => $livestream->ingress_id,
+            's3_path' => $livestream->s3_path,
+            'is_active' => $livestream->is_active,
+            'created_at' => $livestream->created_at,
+            'updated_at' => $livestream->updated_at,
+            'products' => $livestream->products->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'description' => $product->description,
+                    'price' => $product->price,
+                    'link' => $product->link,
+                    'image' => $product->images->first()?->url,
+                ];
+            }),
+        ];
+
+        return Inertia::render('livestream/show', [
+            'livestream' => $formattedLivestream,
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([

@@ -13,9 +13,9 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/livestream/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { index as livestreamIndexRoute, store as livestreamStoreRoute } from '@/routes/livestream';
+import { index as livestreamIndexRoute, store as livestreamStoreRoute, show as livestreamShowRoute } from '@/routes/livestream';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import {
     type ColumnDef,
     type ColumnFiltersState,
@@ -89,7 +89,8 @@ const columns: ColumnDef<LivestreamRecord>[] = [
                         variant="ghost"
                         size="sm"
                         className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => {
+                        onClick={(e) => {
+                            e.stopPropagation();
                             navigator.clipboard.writeText(row.original.ws_url || '');
                             toast.success('WebSocket URL copied to clipboard');
                         }}
@@ -113,7 +114,8 @@ const columns: ColumnDef<LivestreamRecord>[] = [
                         variant="ghost"
                         size="sm"
                         className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => {
+                        onClick={(e) => {
+                            e.stopPropagation();
                             navigator.clipboard.writeText(row.original.stream_key || '');
                             toast.success('Stream key copied to clipboard');
                         }}
@@ -345,7 +347,11 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
                                 <TableBody>
                                     {table.getRowModel().rows.length ? (
                                         table.getRowModel().rows.map((row) => (
-                                            <TableRow key={row.id}>
+                                            <TableRow
+                                                key={row.id}
+                                                className="cursor-pointer hover:bg-muted/50"
+                                                onClick={() => router.visit(livestreamShowRoute({ livestream: row.original.id }).url)}
+                                            >
                                                 {row.getVisibleCells().map((cell) => (
                                                     <TableCell key={cell.id}>
                                                         {flexRender(
