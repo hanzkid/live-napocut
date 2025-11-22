@@ -35,7 +35,7 @@ class LivestreamController extends Controller
 
         $streamData = Livekit::createRoom($validated['title']);
 
-        LiveStream::create([
+        $livestream = LiveStream::create([
             'title' => $validated['title'],
             'ws_url' => $streamData['ws_url'],
             'stream_key' => $streamData['stream_key'],
@@ -45,6 +45,10 @@ class LivestreamController extends Controller
 
         return redirect()
             ->route('livestream.index')
-            ->with('success', 'Livestream created successfully.');
+            ->with('success', 'Livestream created successfully.')
+            ->with('createdStream', [
+                'ws_url' => $livestream->ws_url,
+                'stream_key' => $livestream->stream_key,
+            ]);
     }
 }

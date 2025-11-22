@@ -27,8 +27,9 @@ import {
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { ArrowUpDown, Copy, Plus } from 'lucide-react';
+import { ArrowUpDown, Copy, Plus, CheckCircle2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePage } from '@inertiajs/react';
 
 type LivestreamRecord = {
     id: number;
@@ -131,13 +132,24 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
     ]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+    const [createdStreamData, setCreatedStreamData] = useState<{ ws_url: string; stream_key: string } | null>(null);
     const { data, setData, post, processing, errors, reset } = useForm<{ title: string }>({
         title: '',
     });
+    const page = usePage<{ createdStream?: { ws_url: string; stream_key: string } }>();
 
     useEffect(() => {
         setRows(streams);
     }, [streams]);
+
+    // Check for flash data with created stream credentials
+    useEffect(() => {
+        if (page.props.createdStream) {
+            setCreatedStreamData(page.props.createdStream);
+            setIsSuccessDialogOpen(true);
+        }
+    }, [page.props.createdStream]);
 
     const table = useReactTable({
         data: rows,
@@ -183,6 +195,16 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
     const closeDialog = () => {
         setIsDialogOpen(false);
         reset();
+    };
+
+    const closeSuccessDialog = () => {
+        setIsSuccessDialogOpen(false);
+        setCreatedStreamData(null);
+    };
+
+    const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success(`${label} copied to clipboard`);
     };
 
     return (
@@ -338,6 +360,90 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Success Dialog */}
+            <Dialog open={isSuccessDialogOpen} onOpenChange={(open) => (open ? setIsSuccessDialogOpen(true) : closeSuccessDialog())}>
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+                                <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div>
+                                <DialogTitle>Livestream Created Successfully!</DialogTitle>
+                                <DialogDescription>
+                                    Your livestream is ready. Use these credentials to start streaming.
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    {createdStreamData && (
+                        <div className="space-y-4">
+                            {/* WebSocket URL */}
+                            <div className="space-y-2">
+                                <Label htmlFor="success-ws-url">WebSocket URL (Server)</Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="success-ws-url"
+                                        value={createdStreamData.ws_url}
+                                        readOnly
+                                        className="font-mono text-sm"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => copyToClipboard(createdStreamData.ws_url, 'WebSocket URL')}
+                                    >
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Stream Key */}
+                            <div className="space-y-2">
+                                <Label htmlFor="success-stream-key">Stream Key</Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="success-stream-key"
+                                        value={createdStreamData.stream_key}
+                                        readOnly
+                                        className="font-mono text-sm"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => copyToClipboard(createdStreamData.stream_key, 'Stream key')}
+                                    >
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Instructions */}
+                            <div className="rounded-lg bg-muted p-4">
+                                <h4 className="mb-2 font-semibold text-sm">Setup Instructions for OBS:</h4>
+                                <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                                    <li>Open OBS Studio</li>
+                                    <li>Go to Settings → Stream</li>
+                                    <li>Select "Custom" as the service</li>
+                                    <li>Paste the WebSocket URL in the "Server" field</li>
+                                    <li>Paste the Stream Key in the "Stream Key" field</li>
+                                    <li>Click "OK" and start streaming!</li>
+                                </ol>
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter>
+                        <Button onClick={closeSuccessDialog} className="w-full sm:w-auto">
+                            Got it, thanks!
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </AppLayout>
