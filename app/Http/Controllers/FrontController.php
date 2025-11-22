@@ -17,12 +17,30 @@ class FrontController extends Controller
         $token = session('livekit_token');
 
         $activeStream = \App\Models\LiveStream::where('is_active', true)
+            ->with(['products.images'])
             ->latest()
             ->first();
 
         $hlsUrl = null;
         if ($activeStream && $activeStream->s3_path) {
-            $hlsUrl = config('livekit.s3_public_url').'/'.$activeStream->s3_path;
+            $hlsUrl = config('livekit.s3_public_url') . '/' . $activeStream->s3_path;
+        }
+
+        // Format products for frontend
+        $products = [];
+        if ($activeStream) {
+            $products = $activeStream->products->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => $product->price,
+                    'formatted_price' => $product->formatted_price,
+                    'description' => $product->description,
+                    'link' => $product->link,
+                    'image' => $product->images->first()?->url,
+                    'images' => $product->images->map(fn($img) => $img->url)->toArray(),
+                ];
+            })->toArray();
         }
 
         return Inertia::render('live', [
@@ -31,6 +49,7 @@ class FrontController extends Controller
             'room_name' => $activeStream?->title,
             'hls_url' => $hlsUrl,
             'is_active' => $activeStream?->is_active ?? false,
+            'products' => $products,
         ]);
     }
 
@@ -45,7 +64,7 @@ class FrontController extends Controller
             ->latest()
             ->first();
 
-        if (! $activeStream) {
+        if (!$activeStream) {
             return redirect()->route('live')->withErrors([
                 'stream' => 'No active livestream available at the moment.',
             ]);
