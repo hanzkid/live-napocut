@@ -137,7 +137,7 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
     const { data, setData, post, processing, errors, reset } = useForm<{ title: string }>({
         title: '',
     });
-    const page = usePage<{ createdStream?: { ws_url: string; stream_key: string } }>();
+    const page = usePage<{ flash: { createdStream?: { ws_url: string; stream_key: string } } }>();
 
     useEffect(() => {
         setRows(streams);
@@ -145,11 +145,11 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
 
     // Check for flash data with created stream credentials
     useEffect(() => {
-        if (page.props.createdStream) {
-            setCreatedStreamData(page.props.createdStream);
+        if (page.props.flash?.createdStream) {
+            setCreatedStreamData(page.props.flash.createdStream);
             setIsSuccessDialogOpen(true);
         }
-    }, [page.props.createdStream]);
+    }, [page.props.flash?.createdStream]);
 
     const table = useReactTable({
         data: rows,
