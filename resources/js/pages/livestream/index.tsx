@@ -490,7 +490,7 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
                                                                     )}
                                                                     <div className="flex-1 min-w-0">
                                                                         <p className="font-medium text-sm truncate">{product.name}</p>
-                                                                        <p className="text-xs text-muted-foreground">${parseFloat(product.price).toFixed(2)}</p>
+                                                                        <p className="text-xs text-muted-foreground">{product.price}</p>
                                                                     </div>
                                                                 </div>
                                                                 <Check

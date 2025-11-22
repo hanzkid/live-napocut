@@ -46,7 +46,7 @@ class LivestreamController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'description' => $product->description,
-                    'price' => $product->price,
+                    'price' => $product->formatted_price,
                     'link' => $product->link,
                     'image' => $product->images->first()?->url,
                 ];

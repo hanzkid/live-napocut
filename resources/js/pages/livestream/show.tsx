@@ -299,7 +299,7 @@ export default function LivestreamShow({ livestream }: LivestreamShowProps) {
                                                                 )}
                                                                 <div className="flex-1 min-w-0">
                                                                     <p className="font-medium text-sm truncate">{product.name}</p>
-                                                                    <p className="text-xs text-muted-foreground">${parseFloat(product.price).toFixed(2)}</p>
+                                                                    <p className="text-xs text-muted-foreground">{product.price}</p>
                                                                 </div>
                                                             </div>
                                                         </CommandItem>
@@ -350,7 +350,7 @@ export default function LivestreamShow({ livestream }: LivestreamShowProps) {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <span className="font-semibold">${parseFloat(product.price).toFixed(2)}</span>
+                                                    <span className="font-semibold">{product.price}</span>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">

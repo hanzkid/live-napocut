@@ -127,7 +127,7 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
             accessorKey: 'price',
             header: () => <span className="text-sm font-semibold">Price</span>,
             cell: ({ row }) => (
-                <span className="font-medium">${parseFloat(row.original.price).toFixed(2)}</span>
+                <span className="font-medium">{row.original.price}</span>
             ),
         },
         {

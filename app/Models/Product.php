@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Number;
 
 class Product extends Model
 {
@@ -16,6 +18,17 @@ class Product extends Model
     protected $casts = [
         'price' => 'decimal:2',
     ];
+
+    protected $appends = [
+        'formatted_price',
+    ];
+
+    protected function formattedPrice(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => Number::currency($this->price, 'IDR', 'id'),
+        );
+    }
 
     public function images()
     {

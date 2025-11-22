@@ -23,13 +23,15 @@ class ProductController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'description' => $product->description,
-                    'price' => $product->price,
+                    'price' => $product->formatted_price,
                     'link' => $product->link,
-                    'images' => $product->images->map(fn($img) => [
-                        'id' => $img->id,
-                        'url' => $img->url,
-                        'order' => $img->order,
-                    ]),
+                    'images' => $product->images->map(function ($image) {
+                        return [
+                            'id' => $image->id,
+                            'url' => $image->url,
+                            'order' => $image->order,
+                        ];
+                    }),
                     'created_at' => $product->created_at,
                 ];
             });
@@ -55,7 +57,7 @@ class ProductController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'price' => $product->price,
+                    'price' => $product->formatted_price,
                     'image' => $product->images->first()?->url,
                 ];
             });
