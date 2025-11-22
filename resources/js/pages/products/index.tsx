@@ -69,7 +69,10 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
     ]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [productToDelete, setProductToDelete] = useState<number | null>(null);
     const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [importUrl, setImportUrl] = useState('');
@@ -243,14 +246,24 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
     };
 
     const handleDelete = (id: number) => {
-        if (confirm('Are you sure you want to delete this product?')) {
-            router.delete(productsDestroyRoute({ product: id }).url, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success('Product deleted successfully');
-                },
-            });
-        }
+        setProductToDelete(id);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (!productToDelete) return;
+
+        router.delete(productsDestroyRoute({ product: productToDelete }).url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success('Product deleted successfully');
+                setIsDeleteDialogOpen(false);
+                setProductToDelete(null);
+            },
+            onError: () => {
+                toast.error('Failed to delete product');
+            },
+        });
     };
 
     const handleDeleteImage = (imageId: number) => {
@@ -663,6 +676,26 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Product</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this product? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={confirmDelete}>
+                            Delete
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </AppLayout>
