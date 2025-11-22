@@ -41,6 +41,32 @@ class ProductController extends Controller
         ]);
     }
 
+    public function show(Product $product): Response
+    {
+        $product->load('images');
+
+        $formattedProduct = [
+            'id' => $product->id,
+            'name' => $product->name,
+            'description' => $product->description,
+            'price' => $product->formatted_price,
+            'link' => $product->link,
+            'images' => $product->images->map(function ($image) {
+                return [
+                    'id' => $image->id,
+                    'url' => $image->url,
+                    'order' => $image->order,
+                ];
+            }),
+            'created_at' => $product->created_at,
+            'updated_at' => $product->updated_at,
+        ];
+
+        return Inertia::render('products/show', [
+            'product' => $formattedProduct,
+        ]);
+    }
+
     public function search(Request $request)
     {
         $query = $request->input('q', '');
@@ -194,6 +220,39 @@ class ProductController extends Controller
             return redirect()
                 ->route('products.index')
                 ->with('error', 'Failed to import product: ' . $e->getMessage());
+        }
+    }
+
+    public function uploadImages(Request $request, Product $product): RedirectResponse
+    {
+        $validated = $request->validate([
+            'images' => ['required', 'array'],
+            'images.*' => ['image', 'max:5120'], // 5MB max
+        ]);
+
+        $lastOrder = $product->images()->max('order') ?? 0;
+
+        try {
+            foreach ($request->file('images') as $index => $image) {
+                $path = $image->store('products', 's3');
+                $url = config('livekit.s3_public_url') . '/' . $path;
+
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'path' => $path,
+                    'url' => $url,
+                    'order' => $lastOrder + $index + 1,
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Images uploaded successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Image upload failed', [
+                'error' => $e->getMessage(),
+                'product_id' => $product->id,
+            ]);
+
+            return redirect()->back()->with('error', 'Failed to upload images: ' . $e->getMessage());
         }
     }
 

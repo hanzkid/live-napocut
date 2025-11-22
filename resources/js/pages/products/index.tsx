@@ -29,7 +29,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { ArrowUpDown, Plus, Pencil, Trash2, X, ImagePlus, Link } from 'lucide-react';
+import { ArrowUpDown, Plus, Pencil, Trash2, X, ImagePlus, Link, ExternalLink } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 
 type ProductImage = {
@@ -99,23 +99,38 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
             accessorKey: 'name',
             header: () => <span className="text-sm font-semibold">Product</span>,
             cell: ({ row }) => (
-                <div className="flex items-center gap-3">
-                    {row.original.images[0] ? (
-                        <img
-                            src={row.original.images[0].url}
-                            alt={row.original.name}
-                            className="h-12 w-12 rounded object-cover"
-                        />
-                    ) : (
-                        <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
-                            <ImagePlus className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                    )}
-                    <div className="flex flex-col">
-                        <span className="font-medium text-foreground">{row.original.name}</span>
+                <div className="flex items-center gap-4">
+                    {/* Image Gallery Preview */}
+                    <div className="flex -space-x-2">
+                        {row.original.images.slice(0, 3).map((image, index) => (
+                            <div
+                                key={image.id}
+                                className="relative h-14 w-14 rounded-lg border-2 border-background overflow-hidden shadow-sm hover:z-10 transition-transform hover:scale-110"
+                                style={{ zIndex: 3 - index }}
+                            >
+                                <img
+                                    src={image.url}
+                                    alt={`${row.original.name} ${index + 1}`}
+                                    className="h-full w-full object-cover"
+                                />
+                            </div>
+                        ))}
+                        {row.original.images.length === 0 && (
+                            <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center border-2 border-background">
+                                <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                        )}
+                        {row.original.images.length > 3 && (
+                            <div className="h-14 w-14 rounded-lg bg-primary/10 flex items-center justify-center border-2 border-background text-xs font-semibold text-primary">
+                                +{row.original.images.length - 3}
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                        <span className="font-semibold text-foreground truncate">{row.original.name}</span>
                         {row.original.description && (
-                            <span className="text-sm text-muted-foreground line-clamp-1">
-                                {row.original.description}
+                            <span className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+                                {row.original.description.replace(/<[^>]*>/g, '')}
                             </span>
                         )}
                     </div>
@@ -127,34 +142,56 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
             accessorKey: 'price',
             header: () => <span className="text-sm font-semibold">Price</span>,
             cell: ({ row }) => (
-                <span className="font-medium">{row.original.price}</span>
+                <span className="font-semibold text-lg">{row.original.price}</span>
             ),
         },
         {
-            accessorKey: 'images',
-            header: () => <span className="text-sm font-semibold">Images</span>,
+            accessorKey: 'link',
+            header: () => <span className="text-sm font-semibold">Link</span>,
             cell: ({ row }) => (
-                <span className="text-sm text-muted-foreground">{row.original.images.length} image(s)</span>
+                row.original.link ? (
+                    <a
+                        href={row.original.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline flex items-center gap-1"
+                    >
+                        <ExternalLink className="h-3 w-3" />
+                        View
+                    </a>
+                ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                )
             ),
         },
         {
             id: 'actions',
             header: () => <span className="text-sm font-semibold">Actions</span>,
             cell: ({ row }) => (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                     <Button
                         variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(row.original)}
+                        size="icon"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(row.original);
+                        }}
+                        className="h-8 w-8"
+                        title="Edit product"
                     >
                         <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                         variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(row.original.id)}
+                        size="icon"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(row.original.id);
+                        }}
+                        className="h-8 w-8 hover:text-destructive"
+                        title="Delete product"
                     >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
             ),
@@ -358,13 +395,18 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
                     </div>
                 </header>
 
-                <Card className="border border-sidebar-border/70 shadow-none">
-                    <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                        <div />
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Card className="shadow-sm border-border/50">
+                    <CardHeader className="border-b bg-muted/30">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold">All Products</h2>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    {filteredCount} of {totalCount} products
+                                </p>
+                            </div>
                             <Input
-                                className="w-full min-w-[220px]"
-                                placeholder="Search by name…"
+                                className="w-full sm:w-[300px]"
+                                placeholder="Search products..."
                                 value={nameFilterValue}
                                 onChange={(event) =>
                                     table.getColumn('name')?.setFilterValue(event.target.value)
@@ -408,7 +450,11 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
                                 <TableBody>
                                     {table.getRowModel().rows.length ? (
                                         table.getRowModel().rows.map((row) => (
-                                            <TableRow key={row.id}>
+                                            <TableRow
+                                                key={row.id}
+                                                className="cursor-pointer hover:bg-muted/50"
+                                                onClick={() => router.visit(`/products/${row.original.id}`)}
+                                            >
                                                 {row.getVisibleCells().map((cell) => (
                                                     <TableCell key={cell.id}>
                                                         {flexRender(

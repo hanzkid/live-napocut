@@ -12,9 +12,10 @@ Route::post('/webhooks/livekit', [LivekitWebhookController::class, 'handle'])->n
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::resource('livestream', LivestreamController::class)->names('livestream');
-    Route::resource('products', ProductController::class)->except(['show', 'create', 'edit']);
+    Route::resource('products', ProductController::class)->except(['create', 'edit']);
     Route::get('products-search', [ProductController::class, 'search'])->name('products.search');
     Route::post('products/import-from-url', [ProductController::class, 'importFromUrl'])->name('products.import-from-url');
+    Route::post('products/{product}/images', [ProductController::class, 'uploadImages'])->name('products.images.upload');
     Route::delete('product-images/{image}', [ProductController::class, 'deleteImage'])->name('product-images.destroy');
     Route::post('livestream/{livestream}/products', [LivestreamController::class, 'attachProduct'])->name('livestream.products.attach');
     Route::delete('livestream/{livestream}/products/{product}', [LivestreamController::class, 'detachProduct'])->name('livestream.products.detach');
