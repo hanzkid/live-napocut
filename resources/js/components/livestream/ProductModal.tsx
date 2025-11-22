@@ -1,4 +1,4 @@
-import { X, ChevronLeft, ChevronRight, ShoppingCart, Heart } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, ShoppingCart, Heart, ExternalLink } from "lucide-react";
 import { Button } from "@/components/livestream/ui/button";
 import { Badge } from "@/components/livestream/ui/badge";
 import { Separator } from "@/components/livestream/ui/separator";
@@ -72,11 +72,10 @@ export const ProductModal = ({ product, onClose }: ProductModalProps) => {
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`h-2 rounded-full transition-all ${
-                    index === currentImageIndex
-                      ? "bg-primary w-8"
-                      : "bg-primary/30 w-2"
-                  }`}
+                  className={`h-2 rounded-full transition-all ${index === currentImageIndex
+                    ? "bg-primary w-8"
+                    : "bg-primary/30 w-2"
+                    }`}
                   aria-label={`View image ${index + 1}`}
                 />
               ))}
@@ -105,12 +104,14 @@ export const ProductModal = ({ product, onClose }: ProductModalProps) => {
               <Heart className="h-5 w-5" />
             </Button>
           </div>
-          
+
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-bold">
-              ${product.price.toLocaleString()}
+            <span className="text-3xl font-bold">
+              {product.formatted_price || `$${product.price.toLocaleString()}`}
             </span>
-            <span className="text-muted-foreground">.00</span>
+            {!product.formatted_price && (
+              <span className="text-muted-foreground">.00</span>
+            )}
           </div>
         </div>
 
@@ -142,9 +143,12 @@ export const ProductModal = ({ product, onClose }: ProductModalProps) => {
           <Button
             className="w-full h-14 text-lg font-semibold"
             size="lg"
+            asChild
           >
-            <ShoppingCart className="mr-2 h-5 w-5" />
-            Add to Cart
+            <a href={product.link} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="mr-2 h-5 w-5" />
+              Lihat Produk
+            </a>
           </Button>
         </div>
       </div>
