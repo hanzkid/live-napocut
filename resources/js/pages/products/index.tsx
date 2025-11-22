@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/livestream/ui/table';
 import AppLayout from '@/layouts/app-layout';
@@ -463,7 +463,7 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
 
             {/* Create/Edit Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={(open) => (open ? setIsDialogOpen(true) : closeDialog())}>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{editingProduct ? 'Edit Product' : 'Create Product'}</DialogTitle>
                         <DialogDescription>
@@ -487,13 +487,11 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
 
                         <div className="space-y-2">
                             <Label htmlFor="product-description">Description</Label>
-                            <Textarea
-                                id="product-description"
-                                placeholder="Product description"
+                            <RichTextEditor
                                 value={data.description}
-                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setData('description', e.target.value)}
+                                onChange={(value) => setData('description', value)}
+                                placeholder="Product description with formatting support..."
                                 disabled={processing}
-                                rows={3}
                             />
                             {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
                         </div>

@@ -126,12 +126,33 @@ class ProductImportService
         }
 
         return [
-            'name' => $jsonLdData['name'],
-            'description' => $description,
+            'name' => $this->cleanText($jsonLdData['name']),
+            'description' => $this->cleanText($description),
             'price' => $price,
             'link' => $sourceUrl,
             'images' => $images,
         ];
+    }
+
+    /**
+     * Clean HTML entities and tags from text
+     *
+     * @param string $text
+     * @return string
+     */
+    private function cleanText(string $text): string
+    {
+        // Decode HTML entities (&nbsp;, &amp;, etc.)
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        // Remove HTML tags
+        $text = strip_tags($text);
+
+        // Replace multiple spaces with single space
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        // Trim whitespace
+        return trim($text);
     }
 
     /**

@@ -1,0 +1,93 @@
+/* Tiptap Editor Styles */
+.ProseMirror {
+    outline: none !important;
+    border: none !important;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+    color: #adb5bd;
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+}
+
+.ProseMirror h1 {
+    font-size: 2em;
+    font-weight: 700;
+    margin-top: 0.67em;
+    margin-bottom: 0.67em;
+}
+
+.ProseMirror h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin-top: 0.75em;
+    margin-bottom: 0.75em;
+}
+
+.ProseMirror h3 {
+    font-size: 1.25em;
+    font-weight: 600;
+    margin-top: 0.83em;
+    margin-bottom: 0.83em;
+}
+
+.ProseMirror h4 {
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.ProseMirror h5 {
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-top: 1.17em;
+    margin-bottom: 1.17em;
+}
+
+.ProseMirror h6 {
+    font-size: 0.75em;
+    font-weight: 600;
+    margin-top: 1.33em;
+    margin-bottom: 1.33em;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+    padding-left: 1.5em;
+    margin: 0.5em 0;
+}
+
+.ProseMirror ul {
+    list-style-type: disc;
+}
+
+.ProseMirror ol {
+    list-style-type: decimal;
+}
+
+.ProseMirror li {
+    margin: 0.25em 0;
+}
+
+.ProseMirror strong {
+    font-weight: 600;
+}
+
+.ProseMirror em {
+    font-style: italic;
+}
+
+.ProseMirror p {
+    margin: 0.5em 0;
+}
+
+.ProseMirror p:first-child {
+    margin-top: 0;
+}
+
+.ProseMirror p:last-child {
+    margin-bottom: 0;
+}
