@@ -122,27 +122,25 @@ export default function ProductShow({ product: initialProduct }: ProductShowProp
             formData.append('images[]', file);
         });
 
-        try {
-            await router.post(`/products/${product.id}/images`, formData, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success('Images uploaded successfully');
-                    router.reload({ only: ['product'] });
-                },
-                onError: () => {
-                    toast.error('Failed to upload images');
-                },
-                onFinish: () => {
-                    setIsUploadingImage(false);
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                    }
-                },
-            });
-        } catch (error) {
-            toast.error('Failed to upload images');
-            setIsUploadingImage(false);
-        }
+        router.post(`/products/${product.id}/images`, formData, {
+            preserveScroll: true,
+            onSuccess: (page: any) => {
+                toast.success('Images uploaded successfully');
+                // Update local product state with new data
+                if (page.props.product) {
+                    setProduct(page.props.product);
+                }
+            },
+            onError: () => {
+                toast.error('Failed to upload images');
+            },
+            onFinish: () => {
+                setIsUploadingImage(false);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            },
+        });
     };
 
     const handleDeleteImage = (imageId: number) => {
@@ -155,14 +153,19 @@ export default function ProductShow({ product: initialProduct }: ProductShowProp
 
         router.delete(`/product-images/${imageToDelete}`, {
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (page: any) => {
                 toast.success('Image deleted successfully');
-                if (currentImageIndex >= product.images.length - 1) {
-                    setCurrentImageIndex(Math.max(0, product.images.length - 2));
-                }
                 setIsDeleteImageDialogOpen(false);
                 setImageToDelete(null);
-                router.reload({ only: ['product'] });
+
+                // Update local product state
+                if (page.props.product) {
+                    setProduct(page.props.product);
+                    // Adjust current image index if needed
+                    if (currentImageIndex >= page.props.product.images.length) {
+                        setCurrentImageIndex(Math.max(0, page.props.product.images.length - 1));
+                    }
+                }
             },
             onError: () => {
                 toast.error('Failed to delete image');
