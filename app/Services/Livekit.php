@@ -2,40 +2,39 @@
 
 namespace App\Services;
 
-use Agence104\LiveKit\RoomServiceClient;
-use Agence104\LiveKit\RoomCreateOptions;
 use Agence104\LiveKit\IngressServiceClient;
-
+use Agence104\LiveKit\RoomCreateOptions;
+use Agence104\LiveKit\RoomServiceClient;
 use Illuminate\Support\Str;
+use Livekit\AutoParticipantEgress;
+use Livekit\IngressInput;
+use Livekit\RoomEgress;
 use Livekit\S3Upload;
 use Livekit\SegmentedFileOutput;
 use Livekit\SegmentedFileProtocol;
-use Livekit\AutoParticipantEgress;
-use Livekit\RoomEgress;
-use Livekit\IngressInput;
 
 class Livekit
 {
     public static function createRoom(string $roomName)
     {
         $roomService = new RoomServiceClient(
-            config("livekit.api_url"),
-            config("livekit.api_key"),
-            config("livekit.api_secret"),
+            config('livekit.api_url'),
+            config('livekit.api_key'),
+            config('livekit.api_secret'),
         );
 
         // Configure S3 upload
         $s3 = new S3Upload([
-            'access_key' => config("livekit.s3_access_key"),
-            'secret' => config("livekit.s3_secret"),
-            'region' => config("livekit.s3_region"),
-            'bucket' => config("livekit.s3_bucket"),
-            'endpoint' => config("livekit.s3_endpoint"),
+            'access_key' => config('livekit.s3_access_key'),
+            'secret' => config('livekit.s3_secret'),
+            'region' => config('livekit.s3_region'),
+            'bucket' => config('livekit.s3_bucket'),
+            'endpoint' => config('livekit.s3_endpoint'),
             'force_path_style' => true,
         ]);
 
         // Configure HLS segmented output for livestreaming (live only, no VOD recording)
-        $s3Path = $roomName . '-' . Str::random(8) . '/';
+        $s3Path = $roomName.'-'.Str::random(8).'/';
         $segmentedOutput = new SegmentedFileOutput([
             'filename_prefix' => $s3Path,
             'live_playlist_name' => 'live.m3u8',
@@ -50,11 +49,11 @@ class Livekit
         ]);
 
         // Configure room egress
-        $roomEgress = new RoomEgress();
+        $roomEgress = new RoomEgress;
         $roomEgress->setParticipant($participantEgress);
 
         // Create room with egress configuration
-        $opts = (new RoomCreateOptions())
+        $opts = (new RoomCreateOptions)
             ->setName($roomName)
             ->setMetadata(json_encode([]))
             ->setEgress($roomEgress);
@@ -63,9 +62,9 @@ class Livekit
 
         // Create RTMP ingress
         $ingressService = new IngressServiceClient(
-            config("livekit.api_url"),
-            config("livekit.api_key"),
-            config("livekit.api_secret"),
+            config('livekit.api_url'),
+            config('livekit.api_key'),
+            config('livekit.api_secret'),
         );
 
         $ingress = $ingressService->createIngress(
@@ -80,7 +79,7 @@ class Livekit
             'ws_url' => $ingress->getUrl(),
             'stream_key' => $ingress->getStreamKey(),
             'ingress_id' => $ingress->getIngressId(),
-            's3_path' => $s3Path . 'live.m3u8',
+            's3_path' => $s3Path.'live.m3u8',
         ];
     }
 }

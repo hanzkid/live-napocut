@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Agence104\LiveKit\WebhookReceiver;
 use App\Models\LiveStream;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Agence104\LiveKit\WebhookReceiver;
 
 class LivekitWebhookController extends Controller
 {

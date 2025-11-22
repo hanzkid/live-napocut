@@ -2,9 +2,9 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\FrontController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\LivestreamController;
 use App\Http\Controllers\LivekitWebhookController;
+use App\Http\Controllers\LivestreamController;
+use Illuminate\Support\Facades\Route;
 
 Route::post('/webhooks/livekit', [LivekitWebhookController::class, 'handle'])->name('webhooks.livekit');
 
@@ -13,7 +13,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('livestream', LivestreamController::class)->names('livestream');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';
 
 Route::get('/', [FrontController::class, 'livestream'])->name('live');
 

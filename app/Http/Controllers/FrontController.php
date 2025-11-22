@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class FrontController extends Controller
 {
@@ -22,7 +22,7 @@ class FrontController extends Controller
 
         $hlsUrl = null;
         if ($activeStream && $activeStream->s3_path) {
-            $hlsUrl = config('livekit.s3_public_url') . '/' . $activeStream->s3_path;
+            $hlsUrl = config('livekit.s3_public_url').'/'.$activeStream->s3_path;
         }
 
         return Inertia::render('live', [
@@ -45,9 +45,9 @@ class FrontController extends Controller
             ->latest()
             ->first();
 
-        if (!$activeStream) {
+        if (! $activeStream) {
             return redirect()->route('live')->withErrors([
-                'stream' => 'No active livestream available at the moment.'
+                'stream' => 'No active livestream available at the moment.',
             ]);
         }
 

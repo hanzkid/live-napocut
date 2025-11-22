@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\LiveStream;
+use App\Services\Livekit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Services\Livekit;
 
 class LivestreamController extends Controller
 {
@@ -19,7 +19,7 @@ class LivestreamController extends Controller
             'ws_url',
             'stream_key',
             'is_active',
-            'created_at'
+            'created_at',
         ])->latest()->get();
 
         return Inertia::render('livestream/index', [
