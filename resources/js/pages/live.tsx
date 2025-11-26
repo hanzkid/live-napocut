@@ -54,6 +54,9 @@ const Index = (props: {
       { name: viewerName.trim() },
       {
         preserveScroll: true,
+        onSuccess: () => {
+          setShowNameDialog(false);
+        },
         onError: (errors) => {
           if (errors.name) {
             setNameError(errors.name);
