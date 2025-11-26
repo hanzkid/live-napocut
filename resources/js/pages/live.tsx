@@ -27,6 +27,7 @@ const Index = (props: {
   room_name: string | null;
   hls_url: string | null;
   is_active: boolean;
+  is_guest: boolean;
   products: Product[];
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -36,7 +37,6 @@ const Index = (props: {
   const [nameError, setNameError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNameDialog, setShowNameDialog] = useState(false);
-  const livekit_token = props.livekit_token;
 
   const handleNameSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -79,70 +79,33 @@ const Index = (props: {
   };
 
   const handleChatInputClick = () => {
-    // Show name dialog if user doesn't have a token yet
-    if (!livekit_token && props.is_active) {
+    // Show name dialog if user is a guest
+    if (props.is_guest && props.is_active) {
       setShowNameDialog(true);
     }
   };
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
-      {props.is_active ? (
-        livekit_token ? (
-          <LiveKitRoom
-            serverUrl={props.livekit_ws_url}
-            token={livekit_token}
-            connect={true}
-            className="relative w-full h-full"
-          >
-            {/* Video Player */}
-            <VideoPlayer hlsUrl={props.hls_url} />
+      {props.is_active && props.livekit_token ? (
+        <LiveKitRoom
+          serverUrl={props.livekit_ws_url}
+          token={props.livekit_token}
+          connect={true}
+          className="relative w-full h-full"
+        >
+          {/* Video Player */}
+          <VideoPlayer hlsUrl={props.hls_url} />
 
-            {/* Chat Overlay */}
-            <div className="absolute bottom-20 left-4 right-4 z-20">
-              <ChatOverlay />
-            </div>
+          {/* Chat Overlay */}
+          <div className="absolute bottom-20 left-4 right-4 z-20">
+            <ChatOverlay />
+          </div>
 
-            {/* Chat Input */}
-            <div className="absolute bottom-0 left-0 right-0 z-20">
-              <ChatInput
-                drawerTrigger={
-                  <Button
-                    type="button"
-                    size="icon"
-                    className="h-9 w-9 bg-white/90 hover:bg-white text-black rounded-full flex-shrink-0"
-                    onClick={() => setDrawerOpen(true)}
-                  >
-                    <ShoppingBag className="w-4 h-4" />
-                  </Button>
-                }
-              />
-            </div>
-
-            {/* Product Drawer */}
-            <ProductDrawer
-              products={props.products}
-              onProductClick={handleProductClick}
-              open={drawerOpen}
-              onOpenChange={setDrawerOpen}
-            />
-
-            {/* Product Bottom Sheet */}
-            <ProductBottomSheet
-              product={selectedProduct}
-              open={productSheetOpen}
-              onOpenChange={handleCloseProductSheet}
-            />
-          </LiveKitRoom>
-        ) : (
-          // Guest mode - watch only without chat
-          <div className="relative w-full h-full">
-            {/* Video Player */}
-            <VideoPlayer hlsUrl={props.hls_url} />
-
-            {/* Guest Chat Input (triggers name dialog) */}
-            <div className="absolute bottom-0 left-0 right-0 z-20">
-              <div className="flex items-center gap-2 px-4 py-2.5 bg-transparent">
+          {/* Chat Input */}
+          <div className="absolute bottom-0 left-0 right-0 z-20">
+            <ChatInput
+              drawerTrigger={
                 <Button
                   type="button"
                   size="icon"
@@ -151,31 +114,26 @@ const Index = (props: {
                 >
                   <ShoppingBag className="w-4 h-4" />
                 </Button>
-                <div
-                  onClick={handleChatInputClick}
-                  className="flex-1 h-9 bg-white/10 backdrop-blur-sm border border-white/30 text-white/60 rounded-full flex items-center px-4 cursor-pointer"
-                >
-                  Send message...
-                </div>
-              </div>
-            </div>
-
-            {/* Product Drawer */}
-            <ProductDrawer
-              products={props.products}
-              onProductClick={handleProductClick}
-              open={drawerOpen}
-              onOpenChange={setDrawerOpen}
-            />
-
-            {/* Product Bottom Sheet */}
-            <ProductBottomSheet
-              product={selectedProduct}
-              open={productSheetOpen}
-              onOpenChange={handleCloseProductSheet}
+              }
+              onInputClick={props.is_guest ? handleChatInputClick : undefined}
             />
           </div>
-        )
+
+          {/* Product Drawer */}
+          <ProductDrawer
+            products={props.products}
+            onProductClick={handleProductClick}
+            open={drawerOpen}
+            onOpenChange={setDrawerOpen}
+          />
+
+          {/* Product Bottom Sheet */}
+          <ProductBottomSheet
+            product={selectedProduct}
+            open={productSheetOpen}
+            onOpenChange={handleCloseProductSheet}
+          />
+        </LiveKitRoom>
       ) : (
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
@@ -189,9 +147,9 @@ const Index = (props: {
         <Dialog open={showNameDialog} onOpenChange={setShowNameDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Join the chat</DialogTitle>
+              <DialogTitle>Set your display name</DialogTitle>
               <DialogDescription>
-                Enter your name to start chatting and interacting with the livestream.
+                Enter your name to participate in the chat and interact with others.
               </DialogDescription>
             </DialogHeader>
             <form className="space-y-4" onSubmit={handleNameSubmit}>

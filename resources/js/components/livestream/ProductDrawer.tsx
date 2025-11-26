@@ -59,7 +59,6 @@ export const ProductDrawer = ({
                     onScroll={handleScroll}
                 >
                     {visibleProducts.map((product) => (
-                        console.log(product),
                         <div
                             key={product.id}
                             className="flex items-center gap-3 cursor-pointer group p-3 rounded-lg hover:bg-accent transition-colors"

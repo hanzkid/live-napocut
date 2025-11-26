@@ -26,6 +26,26 @@ class FrontController extends Controller
             $hlsUrl = config('livekit.s3_public_url') . '/' . $activeStream->s3_path;
         }
 
+        // Generate guest token if user doesn't have one and stream is active
+        if (!$token && $activeStream) {
+            $roomName = $activeStream->title;
+            $guestName = 'Guest_' . rand(1000, 9999);
+
+            $tokenOptions = (new \Agence104\LiveKit\AccessTokenOptions)
+                ->setIdentity($guestName);
+
+            $videoGrant = (new \Agence104\LiveKit\VideoGrant)
+                ->setRoomJoin()
+                ->setRoomName($roomName);
+
+            $token = (new \Agence104\LiveKit\AccessToken($livekit['api_key'], $livekit['api_secret']))
+                ->init($tokenOptions)
+                ->setGrant($videoGrant)
+                ->toJwt();
+
+            session(['livekit_token' => $token, 'is_guest' => true]);
+        }
+
         // Format products for frontend
         $products = [];
         if ($activeStream) {
@@ -50,6 +70,7 @@ class FrontController extends Controller
             'room_name' => $activeStream?->title,
             'hls_url' => $hlsUrl,
             'is_active' => $activeStream?->is_active ?? false,
+            'is_guest' => session('is_guest', false),
             'products' => $products,
         ]);
     }
@@ -86,7 +107,7 @@ class FrontController extends Controller
             ->setGrant($videoGrant)
             ->toJwt();
 
-        session(['livekit_token' => $token]);
+        session(['livekit_token' => $token, 'is_guest' => false]);
 
         return redirect()->route('live');
     }

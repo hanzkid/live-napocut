@@ -22,12 +22,15 @@ export const VideoPlayer = ({ hlsUrl }: VideoPlayerProps) => {
     return saved !== null ? saved === 'true' : true;
   });
 
-  // Unmute prompt state
-  const [showUnmutePrompt, setShowUnmutePrompt] = useState(false);
+  // Play prompt state
+  const [showPlayPrompt, setShowPlayPrompt] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !hlsUrl) return;
+
+    // Ensure video starts muted for autoplay
+    video.muted = isMuted;
 
     // Check if HLS is supported
     if (Hls.isSupported()) {
@@ -43,11 +46,9 @@ export const VideoPlayer = ({ hlsUrl }: VideoPlayerProps) => {
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         video.play().catch((error) => {
           console.error("Error playing video:", error);
+          // Show play prompt if autoplay is blocked
+          setShowPlayPrompt(true);
         });
-        // Show unmute prompt if video is muted
-        if (isMuted) {
-          setShowUnmutePrompt(true);
-        }
       });
 
       hls.on(Hls.Events.ERROR, (event, data) => {
@@ -76,11 +77,9 @@ export const VideoPlayer = ({ hlsUrl }: VideoPlayerProps) => {
       video.addEventListener("loadedmetadata", () => {
         video.play().catch((error) => {
           console.error("Error playing video:", error);
+          // Show play prompt if autoplay is blocked
+          setShowPlayPrompt(true);
         });
-        // Show unmute prompt if video is muted
-        if (isMuted) {
-          setShowUnmutePrompt(true);
-        }
       });
     }
 
@@ -102,9 +101,20 @@ export const VideoPlayer = ({ hlsUrl }: VideoPlayerProps) => {
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
-    // Hide unmute prompt when user unmutes
-    if (isMuted) {
-      setShowUnmutePrompt(false);
+  };
+
+  const handlePlay = () => {
+    const video = videoRef.current;
+    if (video) {
+      video.muted = false; // Unmute since user has already provided input
+      setIsMuted(false); // Update state
+      video.play()
+        .then(() => {
+          setShowPlayPrompt(false);
+        })
+        .catch((error) => {
+          console.error("Still cannot play video:", error);
+        });
     }
   };
 
@@ -129,40 +139,21 @@ export const VideoPlayer = ({ hlsUrl }: VideoPlayerProps) => {
         )}
       </div>
 
-      {/* Unmute Prompt Overlay */}
-      {showUnmutePrompt && isMuted && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-20">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 max-w-sm mx-4 relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 h-8 w-8"
-              onClick={() => setShowUnmutePrompt(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                <VolumeX className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Enable Sound</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Unmute to hear the livestream audio and enjoy the full experience!
-                </p>
-              </div>
-              <Button
-                onClick={toggleMute}
-                className="w-full"
-                size="lg"
-              >
-                <Volume2 className="w-5 h-5 mr-2" />
-                Unmute Now
-              </Button>
-            </div>
+      {/* Click to Play Prompt (when autoplay is blocked) */}
+      {showPlayPrompt && (
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-black/30 z-30 cursor-pointer"
+          onClick={handlePlay}
+        >
+          <div className="w-32 h-32 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-all duration-300 hover:scale-110">
+            <svg className="w-16 h-16 text-white ml-2" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
           </div>
         </div>
       )}
+
+
 
       {/* Top Controls */}
       <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/60 to-transparent z-10">

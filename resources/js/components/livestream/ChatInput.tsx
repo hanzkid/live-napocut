@@ -6,9 +6,10 @@ import { Send } from "lucide-react";
 
 interface ChatInputProps {
   drawerTrigger?: React.ReactNode;
+  onInputClick?: () => void;
 }
 
-export const ChatInput = ({ drawerTrigger }: ChatInputProps) => {
+export const ChatInput = ({ drawerTrigger, onInputClick }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const { send } = useChat();
 
@@ -20,12 +21,19 @@ export const ChatInput = ({ drawerTrigger }: ChatInputProps) => {
     }
   };
 
+  const handleInputClick = () => {
+    if (onInputClick) {
+      onInputClick();
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-2 px-4 py-2.5 bg-transparent">
       {drawerTrigger}
       <Input
         value={message}
         onChange={(e) => setMessage(e.target.value)}
+        onClick={handleInputClick}
         placeholder="Send message..."
         className="flex-1 h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white placeholder:text-white/60 focus-visible:ring-1 focus-visible:ring-white/40 focus-visible:border-white/50 focus-visible:bg-white/15 rounded-full"
       />
