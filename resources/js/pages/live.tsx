@@ -6,7 +6,7 @@ import { VideoPlayer } from "@/components/livestream/VideoPlayer";
 import { ChatOverlay } from "@/components/livestream/ChatOverlay";
 import { ChatInput } from "@/components/livestream/ChatInput";
 import { ProductDrawer } from "@/components/livestream/ProductDrawer";
-import { ProductModal } from "@/components/livestream/ProductModal";
+import { ProductBottomSheet } from "@/components/livestream/ProductBottomSheet";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ const Index = (props: {
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [productSheetOpen, setProductSheetOpen] = useState(false);
   const [viewerName, setViewerName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,10 +68,14 @@ const Index = (props: {
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
+    setProductSheetOpen(true);
+    setDrawerOpen(false); // Close the product list drawer
   };
 
-  const handleCloseModal = () => {
+  const handleCloseProductSheet = () => {
+    setProductSheetOpen(false);
     setSelectedProduct(null);
+    setDrawerOpen(true); // Reopen the product list drawer
   };
 
   return (
@@ -121,15 +126,12 @@ const Index = (props: {
             onOpenChange={setDrawerOpen}
           />
 
-          {/* Product Modal */}
-          {selectedProduct && (
-            <div className="absolute inset-0 z-[60]">
-              <ProductModal
-                product={selectedProduct}
-                onClose={handleCloseModal}
-              />
-            </div>
-          )}
+          {/* Product Bottom Sheet */}
+          <ProductBottomSheet
+            product={selectedProduct}
+            open={productSheetOpen}
+            onOpenChange={handleCloseProductSheet}
+          />
         </LiveKitRoom>
       ) : null}
 
