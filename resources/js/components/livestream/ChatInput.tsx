@@ -4,7 +4,11 @@ import { Input } from "@/components/livestream/ui/input";
 import { Button } from "@/components/livestream/ui/button";
 import { Send } from "lucide-react";
 
-export const ChatInput = () => {
+interface ChatInputProps {
+  drawerTrigger?: React.ReactNode;
+}
+
+export const ChatInput = ({ drawerTrigger }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const { send } = useChat();
 
@@ -18,6 +22,7 @@ export const ChatInput = () => {
 
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-2 px-4 py-2.5 bg-transparent">
+      {drawerTrigger}
       <Input
         value={message}
         onChange={(e) => setMessage(e.target.value)}

@@ -5,7 +5,7 @@ import "@livekit/components-styles";
 import { VideoPlayer } from "@/components/livestream/VideoPlayer";
 import { ChatOverlay } from "@/components/livestream/ChatOverlay";
 import { ChatInput } from "@/components/livestream/ChatInput";
-import { ProductCarousel } from "@/components/livestream/ProductCarousel";
+import { ProductDrawer } from "@/components/livestream/ProductDrawer";
 import { ProductModal } from "@/components/livestream/ProductModal";
 import {
   Dialog,
@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ShoppingBag } from "lucide-react";
 import { Product, ChatMessage } from "@/types/livestream";
 
 const Index = (props: {
@@ -29,6 +30,7 @@ const Index = (props: {
   products: Product[];
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [viewerName, setViewerName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,33 +65,13 @@ const Index = (props: {
     );
   };
 
-  // Handle product modal with browser history
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
-    // Push a new history state when opening modal
-    window.history.pushState({ modalOpen: true }, '');
   };
 
   const handleCloseModal = () => {
     setSelectedProduct(null);
-    // Remove the history state if it exists
-    if (window.history.state?.modalOpen) {
-      window.history.back();
-    }
   };
-
-  // Listen for back button
-  useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      // Close modal when back button is pressed
-      if (selectedProduct) {
-        setSelectedProduct(null);
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [selectedProduct]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
@@ -111,29 +93,42 @@ const Index = (props: {
           <VideoPlayer hlsUrl={props.hls_url} />
 
           {/* Chat Overlay */}
-          <div className="absolute bottom-44 left-4 right-4 z-20">
+          <div className="absolute bottom-20 left-4 right-4 z-20">
             <ChatOverlay />
           </div>
 
           {/* Chat Input */}
-          <div className="absolute bottom-24 left-0 right-0 z-20">
-            <ChatInput />
-          </div>
-
-          {/* Product Carousel */}
           <div className="absolute bottom-0 left-0 right-0 z-20">
-            <ProductCarousel
-              products={props.products}
-              onProductClick={handleProductClick}
+            <ChatInput
+              drawerTrigger={
+                <Button
+                  type="button"
+                  size="icon"
+                  className="h-9 w-9 bg-white/90 hover:bg-white text-black rounded-full flex-shrink-0"
+                  onClick={() => setDrawerOpen(true)}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                </Button>
+              }
             />
           </div>
+
+          {/* Product Drawer */}
+          <ProductDrawer
+            products={props.products}
+            onProductClick={handleProductClick}
+            open={drawerOpen}
+            onOpenChange={setDrawerOpen}
+          />
 
           {/* Product Modal */}
           {selectedProduct && (
-            <ProductModal
-              product={selectedProduct}
-              onClose={handleCloseModal}
-            />
+            <div className="absolute inset-0 z-[60]">
+              <ProductModal
+                product={selectedProduct}
+                onClose={handleCloseModal}
+              />
+            </div>
           )}
         </LiveKitRoom>
       ) : null}
