@@ -3,6 +3,7 @@ export interface Product {
   name: string;
   price: number;
   formatted_price?: string;
+  plain_price?: string;
   image: string;
   images?: string[];
   description?: string;

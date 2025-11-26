@@ -1,5 +1,3 @@
-import { Check } from "lucide-react";
-import { Button } from "@/components/livestream/ui/button";
 import {
     Drawer,
     DrawerContent,
@@ -7,7 +5,7 @@ import {
     DrawerTitle,
 } from "@/components/ui/drawer";
 import { Product } from "@/types/livestream";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface ProductDrawerProps {
     products: Product[];
@@ -16,28 +14,38 @@ interface ProductDrawerProps {
     onOpenChange: (open: boolean) => void;
 }
 
+const PRODUCTS_PER_PAGE = 10;
+
 export const ProductDrawer = ({
     products,
     onProductClick,
     open,
     onOpenChange,
 }: ProductDrawerProps) => {
-    const [selectedProducts, setSelectedProducts] = useState<Set<string>>(
-        new Set()
-    );
+    const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    const toggleSelect = (productId: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        setSelectedProducts((prev) => {
-            const newSet = new Set(prev);
-            if (newSet.has(productId)) {
-                newSet.delete(productId);
-            } else {
-                newSet.add(productId);
-            }
-            return newSet;
-        });
+    // Reset visible count when drawer opens
+    useEffect(() => {
+        if (open) {
+            setVisibleCount(PRODUCTS_PER_PAGE);
+        }
+    }, [open]);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const target = e.currentTarget;
+        const scrollPercentage =
+            (target.scrollTop + target.clientHeight) / target.scrollHeight;
+
+        // Load more when scrolled to 80% of the content
+        if (scrollPercentage > 0.8 && visibleCount < products.length) {
+            setVisibleCount((prev) =>
+                Math.min(prev + PRODUCTS_PER_PAGE, products.length)
+            );
+        }
     };
+
+    const visibleProducts = products.slice(0, visibleCount);
 
     return (
         <Drawer open={open} onOpenChange={onOpenChange}>
@@ -45,8 +53,13 @@ export const ProductDrawer = ({
                 <DrawerHeader className="flex-shrink-0">
                     <DrawerTitle>Products</DrawerTitle>
                 </DrawerHeader>
-                <div className="overflow-y-auto p-4 space-y-3 flex-1">
-                    {products.map((product) => (
+                <div
+                    ref={scrollContainerRef}
+                    className="overflow-y-auto p-4 space-y-3 flex-1"
+                    onScroll={handleScroll}
+                >
+                    {visibleProducts.map((product) => (
+                        console.log(product),
                         <div
                             key={product.id}
                             className="flex items-center gap-3 cursor-pointer group p-3 rounded-lg hover:bg-accent transition-colors"
@@ -63,23 +76,16 @@ export const ProductDrawer = ({
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate">{product.name}</p>
                                 <p className="text-base font-bold">
-                                    ${product.formatted_price || product.price.toLocaleString()}
+                                    {product.plain_price}
                                 </p>
                             </div>
-
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`w-8 h-8 rounded-full flex-shrink-0 transition-all ${selectedProducts.has(product.id)
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-secondary hover:bg-secondary/80"
-                                    }`}
-                                onClick={(e) => toggleSelect(product.id, e)}
-                            >
-                                <Check className="w-5 h-5" />
-                            </Button>
                         </div>
                     ))}
+                    {visibleCount < products.length && (
+                        <div className="text-center py-4 text-sm text-muted-foreground">
+                            Scroll for more products...
+                        </div>
+                    )}
                 </div>
             </DrawerContent>
         </Drawer>

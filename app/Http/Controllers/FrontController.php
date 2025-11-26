@@ -35,6 +35,7 @@ class FrontController extends Controller
                     'name' => $product->name,
                     'price' => $product->price,
                     'formatted_price' => $product->formatted_price,
+                    'plain_price' => $product->plain_price,
                     'description' => $product->description,
                     'link' => $product->link,
                     'image' => $product->images->first()?->url,
