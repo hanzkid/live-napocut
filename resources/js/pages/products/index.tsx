@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/livestream/ui/table';
 import AppLayout from '@/layouts/app-layout';
@@ -44,12 +45,19 @@ type ProductRecord = {
     description: string | null;
     price: string;
     link: string | null;
+    category: { id: number; name: string } | null;
     images: ProductImage[];
     created_at: string;
 };
 
+type Category = {
+    id: number;
+    name: string;
+};
+
 interface ProductsIndexProps {
     products: ProductRecord[];
+    categories: Category[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -59,7 +67,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
+export default function ProductsIndex({ products = [], categories = [] }: ProductsIndexProps) {
     const [rows, setRows] = useState<ProductRecord[]>(products);
     const [sorting, setSorting] = useState<SortingState>([
         {
@@ -84,12 +92,14 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
         description: string;
         price: string;
         link: string;
+        category_id: string;
         images: File[];
     }>({
         name: '',
         description: '',
         price: '',
         link: '',
+        category_id: '',
         images: [],
     });
 
@@ -239,6 +249,7 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
             description: product.description || '',
             price: product.price,
             link: product.link || '',
+            category_id: product.category?.id.toString() || '',
             images: [],
         });
         setImagePreviews(product.images.map(img => img.url));
@@ -320,6 +331,9 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
         formData.append('description', data.description);
         formData.append('price', data.price);
         formData.append('link', data.link);
+        if (data.category_id) {
+            formData.append('category_id', data.category_id);
+        }
 
         data.images.forEach((image, index) => {
             formData.append(`images[${index}]`, image);
@@ -573,6 +587,28 @@ export default function ProductsIndex({ products = [] }: ProductsIndexProps) {
                                 />
                                 {errors.link && <p className="text-sm text-destructive">{errors.link}</p>}
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="product-category">Category (Optional)</Label>
+                            <Select
+                                value={data.category_id}
+                                onValueChange={(value) => setData('category_id', value)}
+                                disabled={processing}
+                            >
+                                <SelectTrigger id="product-category">
+                                    <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">No category</SelectItem>
+                                    {categories.map((category) => (
+                                        <SelectItem key={category.id} value={category.id.toString()}>
+                                            {category.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.category_id && <p className="text-sm text-destructive">{errors.category_id}</p>}
                         </div>
 
                         <div className="space-y-2">

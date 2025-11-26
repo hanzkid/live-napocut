@@ -15,7 +15,7 @@ class ProductController extends Controller
 {
     public function index(): Response
     {
-        $products = Product::with('images')
+        $products = Product::with(['images', 'category'])
             ->latest()
             ->get()
             ->map(function ($product) {
@@ -25,6 +25,10 @@ class ProductController extends Controller
                     'description' => $product->description,
                     'price' => $product->formatted_price,
                     'link' => $product->link,
+                    'category' => $product->category ? [
+                        'id' => $product->category->id,
+                        'name' => $product->category->name,
+                    ] : null,
                     'images' => $product->images->map(function ($image) {
                         return [
                             'id' => $image->id,
@@ -36,8 +40,11 @@ class ProductController extends Controller
                 ];
             });
 
+        $categories = \App\Models\Category::select('id', 'name')->orderBy('name')->get();
+
         return Inertia::render('products/index', [
             'products' => $products,
+            'categories' => $categories,
         ]);
     }
 
@@ -98,6 +105,7 @@ class ProductController extends Controller
             'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
             'link' => ['nullable', 'url', 'max:255'],
+            'category_id' => ['nullable', 'exists:categories,id'],
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'max:5120'], // 5MB max
         ]);
@@ -107,6 +115,7 @@ class ProductController extends Controller
             'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
             'link' => $validated['link'] ?? null,
+            'category_id' => $validated['category_id'] ?? null,
         ]);
 
         // Handle image uploads
@@ -136,6 +145,7 @@ class ProductController extends Controller
             'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
             'link' => ['nullable', 'url', 'max:255'],
+            'category_id' => ['nullable', 'exists:categories,id'],
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'max:5120'], // 5MB max
         ]);
@@ -145,6 +155,7 @@ class ProductController extends Controller
             'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
             'link' => $validated['link'] ?? null,
+            'category_id' => $validated['category_id'] ?? null,
         ]);
 
         // Handle new image uploads

@@ -13,6 +13,7 @@ class Product extends Model
         'description',
         'price',
         'link',
+        'category_id',
     ];
 
     protected $casts = [
@@ -36,6 +37,11 @@ class Product extends Model
         return Attribute::make(
             get: fn(): string => "Rp. " . number_format((float) $this->price, 0, ',', '.'),
         );
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
     }
 
     public function images()
