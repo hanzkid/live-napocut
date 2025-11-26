@@ -54,8 +54,11 @@ const Index = (props: {
       { name: viewerName.trim() },
       {
         preserveScroll: true,
+        preserveState: false,
         onSuccess: () => {
           setShowNameDialog(false);
+          // Soft reload to get new token without hard refresh
+          router.reload({ only: ['livekit_token', 'is_guest'] });
         },
         onError: (errors) => {
           if (errors.name) {

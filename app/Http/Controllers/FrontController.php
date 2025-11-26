@@ -79,7 +79,7 @@ class FrontController extends Controller
     {
         $livekit = config('livekit');
         $request->validate([
-            'name' => ['nullable', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
         ]);
 
         $activeStream = \App\Models\LiveStream::where('is_active', true)
@@ -87,16 +87,17 @@ class FrontController extends Controller
             ->first();
 
         if (!$activeStream) {
-            return redirect()->route('live')->withErrors([
-                'stream' => 'No active livestream available at the moment.',
+            return back()->withErrors([
+                'name' => 'No active livestream available at the moment.',
             ]);
         }
 
         $roomName = $activeStream->title;
-        $participantName = $request->input('name') ?: optional($request->user())->name ?: 'Guest';
+        $newName = $request->input('name');
 
+        // Generate new token with the new name
         $tokenOptions = (new AccessTokenOptions)
-            ->setIdentity($participantName);
+            ->setIdentity($newName);
 
         $videoGrant = (new VideoGrant)
             ->setRoomJoin()
@@ -109,6 +110,7 @@ class FrontController extends Controller
 
         session(['livekit_token' => $token, 'is_guest' => false]);
 
-        return \Inertia\Inertia::location(route('live'));
+        // Return success without page reload
+        return back();
     }
 }
