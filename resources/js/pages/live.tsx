@@ -92,6 +92,7 @@ const Index = (props: {
     <div className="relative w-full h-screen overflow-hidden bg-black">
       {props.is_active && props.livekit_token ? (
         <LiveKitRoom
+          key={props.livekit_token}
           serverUrl={props.livekit_ws_url}
           token={props.livekit_token}
           connect={true}

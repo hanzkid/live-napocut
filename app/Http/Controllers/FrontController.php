@@ -109,6 +109,6 @@ class FrontController extends Controller
 
         session(['livekit_token' => $token, 'is_guest' => false]);
 
-        return redirect()->route('live');
+        return \Inertia\Inertia::location(route('live'));
     }
 }
