@@ -38,6 +38,29 @@ const Index = (props: {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNameDialog, setShowNameDialog] = useState(false);
 
+
+  // Check localStorage for saved name and auto-submit if user is guest
+  useEffect(() => {
+    const savedName = localStorage.getItem("livestream_viewer_name");
+
+    // If user is a guest and has a saved name, automatically submit it
+    // This works even if they already have a Guest_xxx token
+    if (props.is_guest && savedName && props.is_active) {
+      router.post(
+        "/live",
+        { name: savedName },
+        {
+          preserveScroll: true,
+          preserveState: false,
+          onSuccess: () => {
+            router.reload({ only: ['livekit_token', 'is_guest'] });
+          },
+        }
+      );
+    }
+  }, []); // Run only once on mount
+
+
   const handleNameSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -48,6 +71,9 @@ const Index = (props: {
 
     setNameError(null);
     setIsSubmitting(true);
+
+    // Save name to localStorage
+    localStorage.setItem("livestream_viewer_name", viewerName.trim());
 
     router.post(
       "/live",

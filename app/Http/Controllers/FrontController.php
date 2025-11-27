@@ -11,7 +11,7 @@ use Inertia\Inertia;
 class FrontController extends Controller
 {
     //
-    public function livestream()
+    public function livestream(Request $request)
     {
         $livekit = config('livekit');
         $token = session('livekit_token');
@@ -29,7 +29,14 @@ class FrontController extends Controller
         // Generate guest token if user doesn't have one and stream is active
         if (!$token && $activeStream) {
             $roomName = $activeStream->title;
-            $guestName = 'Guest_' . rand(1000, 9999);
+
+            // Use provided name from request (localStorage) or generate guest name
+            $name = $request->input('name');
+            if ($name) {
+                $guestName = $name;
+            } else {
+                $guestName = 'Guest_' . rand(1000, 9999);
+            }
 
             $tokenOptions = (new \Agence104\LiveKit\AccessTokenOptions)
                 ->setIdentity($guestName);
