@@ -597,10 +597,9 @@ export default function ProductsIndex({ products = [], categories = [] }: Produc
                                 disabled={processing}
                             >
                                 <SelectTrigger id="product-category">
-                                    <SelectValue placeholder="Select a category" />
+                                    <SelectValue placeholder="No category" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">No category</SelectItem>
                                     {categories.map((category) => (
                                         <SelectItem key={category.id} value={category.id.toString()}>
                                             {category.name}
