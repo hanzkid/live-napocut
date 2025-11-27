@@ -2,11 +2,12 @@ import {
     Drawer,
     DrawerContent,
     DrawerHeader,
-    DrawerTitle,
 } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Product } from "@/types/livestream";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { Search } from "lucide-react";
 
 interface ProductDrawerProps {
     products: Product[];
@@ -25,6 +26,7 @@ export const ProductDrawer = ({
 }: ProductDrawerProps) => {
     const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
     const [selectedCategory, setSelectedCategory] = useState<string>("All");
+    const [searchQuery, setSearchQuery] = useState<string>("");
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     // Extract unique categories from products
@@ -38,20 +40,38 @@ export const ProductDrawer = ({
         return ["All", ...Array.from(uniqueCategories).sort()];
     }, [products]);
 
-    // Filter products by selected category
+    // Filter products by selected category and search query
     const filteredProducts = useMemo(() => {
-        if (selectedCategory === "All") {
-            return products;
-        }
-        return products.filter((product) => product.category === selectedCategory);
-    }, [products, selectedCategory]);
+        let filtered = products;
 
-    // Reset visible count when drawer opens or category changes
+        // Filter by category
+        if (selectedCategory !== "All") {
+            filtered = filtered.filter((product) => product.category === selectedCategory);
+        }
+
+        // Filter by search query
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter((product) =>
+                product.name.toLowerCase().includes(query) ||
+                product.description?.toLowerCase().includes(query)
+            );
+        }
+
+        return filtered;
+    }, [products, selectedCategory, searchQuery]);
+
+    // Reset visible count and search when drawer opens or filters change
     useEffect(() => {
         if (open) {
             setVisibleCount(PRODUCTS_PER_PAGE);
+            setSearchQuery("");
         }
-    }, [open, selectedCategory]);
+    }, [open]);
+
+    useEffect(() => {
+        setVisibleCount(PRODUCTS_PER_PAGE);
+    }, [selectedCategory, searchQuery]);
 
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const target = e.currentTarget;
@@ -71,13 +91,23 @@ export const ProductDrawer = ({
     return (
         <Drawer open={open} onOpenChange={onOpenChange}>
             <DrawerContent className="!max-h-[70vh] flex flex-col">
-                <DrawerHeader className="flex-shrink-0">
-                    <DrawerTitle>Products</DrawerTitle>
+                <DrawerHeader className="flex-shrink-0 pb-3 px-4">
+                    {/* Search Input */}
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="text"
+                            placeholder="Search products..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9"
+                        />
+                    </div>
                 </DrawerHeader>
 
                 {/* Category Filter Badges */}
                 {categories.length > 1 && (
-                    <div className="px-4 pb-3 flex-shrink-0">
+                    <div className="px-4 pb-2 flex-shrink-0">
                         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                             {categories.map((category) => (
                                 <Badge
@@ -95,13 +125,13 @@ export const ProductDrawer = ({
 
                 <div
                     ref={scrollContainerRef}
-                    className="overflow-y-auto p-4 space-y-3 flex-1"
+                    className="overflow-y-auto pt-2 px-4 space-y-3 flex-1"
                     onScroll={handleScroll}
                 >
                     {visibleProducts.map((product) => (
                         <div
                             key={product.id}
-                            className="flex items-center gap-3 cursor-pointer group p-3 rounded-lg hover:bg-accent transition-colors"
+                            className="flex items-center gap-3 cursor-pointer group rounded-lg hover:bg-accent transition-colors"
                             onClick={() => onProductClick(product)}
                         >
                             <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-white">
