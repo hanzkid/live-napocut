@@ -58,6 +58,7 @@ class FrontController extends Controller
                     'plain_price' => $product->plain_price,
                     'description' => $product->description,
                     'link' => $product->link,
+                    'category' => $product->category?->name,
                     'image' => $product->images->first()?->url,
                     'images' => $product->images->map(fn($img) => $img->url)->toArray(),
                 ];

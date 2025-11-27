@@ -8,6 +8,7 @@ export interface Product {
   images?: string[];
   description?: string;
   link?: string;
+  category?: string;
 }
 
 export interface ChatMessage {
