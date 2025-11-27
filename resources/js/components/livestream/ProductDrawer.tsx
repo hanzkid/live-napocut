@@ -4,10 +4,11 @@ import {
     DrawerHeader,
 } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Product } from "@/types/livestream";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Search } from "lucide-react";
+import { Search, Copy, Check } from "lucide-react";
 
 interface ProductDrawerProps {
     products: Product[];
@@ -27,7 +28,21 @@ export const ProductDrawer = ({
     const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
     const [selectedCategory, setSelectedCategory] = useState<string>("All");
     const [searchQuery, setSearchQuery] = useState<string>("");
+    const [copiedCode, setCopiedCode] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    // Mock discount codes - replace with actual data from props/API
+    const discountCodes = [
+        { code: "LIVE20", description: "20% off all items", discount: "20%" },
+        { code: "FREESHIP", description: "Free shipping", discount: "Free Ship" },
+        { code: "NEWUSER", description: "New user discount", discount: "15%" },
+    ];
+
+    const handleCopyCode = (code: string) => {
+        navigator.clipboard.writeText(code);
+        setCopiedCode(code);
+        setTimeout(() => setCopiedCode(null), 2000);
+    };
 
     // Extract unique categories from products
     const categories = useMemo(() => {
@@ -104,6 +119,41 @@ export const ProductDrawer = ({
                         />
                     </div>
                 </DrawerHeader>
+
+                {/* Discount Code Cards */}
+                {discountCodes.length > 0 && (
+                    <div className="px-4 pb-3 flex-shrink-0">
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                            {discountCodes.map((discount) => (
+                                <div
+                                    key={discount.code}
+                                    className="flex-shrink-0 cursor-pointer group"
+                                    onClick={() => handleCopyCode(discount.code)}
+                                >
+                                    <div className="relative bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-lg px-3 py-2 hover:shadow-lg transition-all">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1">
+                                                <span className="font-mono font-bold text-sm block mb-0.5">
+                                                    {discount.code}
+                                                </span>
+                                                <p className="text-[10px] opacity-90">
+                                                    {discount.description}
+                                                </p>
+                                            </div>
+                                            <div className="flex-shrink-0 bg-white/20 rounded p-1">
+                                                {copiedCode === discount.code ? (
+                                                    <Check className="h-3 w-3" />
+                                                ) : (
+                                                    <Copy className="h-3 w-3" />
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Category Filter Badges */}
                 {categories.length > 1 && (
