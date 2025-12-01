@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
+use App\Models\DiscountCode;
 use App\Models\LiveStream;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -76,6 +77,24 @@ class FrontController extends Controller
             })->toArray();
         }
 
+        // Fetch valid discount codes
+        $discountCodes = DiscountCode::where(function ($query) {
+            $query->whereNull('valid_start_date')
+                ->orWhere('valid_start_date', '<=', now());
+        })
+        ->where(function ($query) {
+            $query->whereNull('valid_end_date')
+                ->orWhere('valid_end_date', '>=', now());
+        })
+        ->get()
+        ->map(function ($code) {
+            return [
+                'code' => $code->discount_code,
+                'description' => $code->description,
+            ];
+        })
+        ->toArray();
+
         return Inertia::render('live', [
             'livekit_ws_url' => $livekit['ws_url'],
             'livekit_token' => $token,
@@ -84,6 +103,7 @@ class FrontController extends Controller
             'is_active' => $activeStream?->is_active ?? false,
             'is_guest' => session('is_guest', false),
             'products' => $products,
+            'discountCodes' => $discountCodes,
         ]);
     }
 

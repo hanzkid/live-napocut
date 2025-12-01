@@ -21,6 +21,11 @@ import { Label } from "@/components/ui/label";
 import { ShoppingBag } from "lucide-react";
 import { Product, ChatMessage } from "@/types/livestream";
 
+type DiscountCode = {
+  code: string;
+  description: string | null;
+};
+
 const Index = (props: {
   livekit_ws_url: string;
   livekit_token: string | null;
@@ -29,6 +34,7 @@ const Index = (props: {
   is_active: boolean;
   is_guest: boolean;
   products: Product[];
+  discountCodes?: DiscountCode[];
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -155,6 +161,7 @@ const Index = (props: {
           {/* Product Drawer */}
           <ProductDrawer
             products={props.products}
+            discountCodes={props.discountCodes}
             onProductClick={handleProductClick}
             open={drawerOpen}
             onOpenChange={setDrawerOpen}

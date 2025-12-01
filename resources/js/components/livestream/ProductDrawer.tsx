@@ -10,8 +10,14 @@ import { Product } from "@/types/livestream";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Search, Copy, Check } from "lucide-react";
 
+interface DiscountCode {
+    code: string;
+    description: string | null;
+}
+
 interface ProductDrawerProps {
     products: Product[];
+    discountCodes?: DiscountCode[];
     onProductClick: (product: Product) => void;
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -21,6 +27,7 @@ const PRODUCTS_PER_PAGE = 10;
 
 export const ProductDrawer = ({
     products,
+    discountCodes = [],
     onProductClick,
     open,
     onOpenChange,
@@ -30,13 +37,6 @@ export const ProductDrawer = ({
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-    // Mock discount codes - replace with actual data from props/API
-    const discountCodes = [
-        { code: "LIVE20", description: "20% off all items", discount: "20%" },
-        { code: "FREESHIP", description: "Free shipping", discount: "Free Ship" },
-        { code: "NEWUSER", description: "New user discount", discount: "15%" },
-    ];
 
     const handleCopyCode = (code: string) => {
         navigator.clipboard.writeText(code);
