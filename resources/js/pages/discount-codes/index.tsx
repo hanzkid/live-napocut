@@ -87,6 +87,20 @@ export default function DiscountCodesIndex({ discountCodes = [] }: DiscountCodes
         return new Date(dateString).toLocaleString();
     };
 
+    // Format date for datetime-local input (local time, not UTC)
+    const formatDateTimeLocal = (dateString: string | null): string => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        // Get local date components
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        // Return in format: YYYY-MM-DDTHH:mm (local time)
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
     const columns: ColumnDef<DiscountCodeRecord>[] = [
         {
             accessorKey: 'discount_code',
@@ -216,8 +230,8 @@ export default function DiscountCodesIndex({ discountCodes = [] }: DiscountCodes
         setData({
             discount_code: code.discount_code,
             description: code.description || '',
-            valid_start_date: code.valid_start_date ? new Date(code.valid_start_date).toISOString().slice(0, 16) : '',
-            valid_end_date: code.valid_end_date ? new Date(code.valid_end_date).toISOString().slice(0, 16) : '',
+            valid_start_date: formatDateTimeLocal(code.valid_start_date),
+            valid_end_date: formatDateTimeLocal(code.valid_end_date),
         });
         setIsDialogOpen(true);
     };

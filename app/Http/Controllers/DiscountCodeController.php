@@ -19,8 +19,9 @@ class DiscountCodeController extends Controller
                     'id' => $code->id,
                     'discount_code' => $code->discount_code,
                     'description' => $code->description,
-                    'valid_start_date' => $code->valid_start_date?->toDateTimeString(),
-                    'valid_end_date' => $code->valid_end_date?->toDateTimeString(),
+                    // Return ISO 8601 format with timezone to ensure correct parsing in JavaScript
+                    'valid_start_date' => $code->valid_start_date?->toAtomString(),
+                    'valid_end_date' => $code->valid_end_date?->toAtomString(),
                     'is_valid' => $code->isValid(),
                     'created_at' => $code->created_at,
                 ];
