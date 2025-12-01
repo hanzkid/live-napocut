@@ -30,18 +30,7 @@ import {
 import { ArrowUpDown, Copy, Plus, CheckCircle2, Check, ChevronsUpDown, X } from 'lucide-react';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { usePage } from '@inertiajs/react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import axios from 'axios';
-
-type ProductOption = {
-    id: number;
-    name: string;
-    price: string;
-    image: string | null;
-};
+// Product selection has been removed from livestreams
 
 type LivestreamRecord = {
     id: number;
@@ -50,7 +39,6 @@ type LivestreamRecord = {
     stream_key: string | null;
     created_at: string;
     updated_at: string;
-    products?: ProductOption[];
 };
 
 interface LivestreamIndexProps {
@@ -149,49 +137,14 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
     const [createdStreamData, setCreatedStreamData] = useState<{ ws_url: string; stream_key: string } | null>(null);
-    const [productComboboxOpen, setProductComboboxOpen] = useState(false);
-    const [productSearchQuery, setProductSearchQuery] = useState('');
-    const [searchedProducts, setSearchedProducts] = useState<ProductOption[]>([]);
-    const [isLoadingProducts, setIsLoadingProducts] = useState(false);
-    const { data, setData, post, processing, errors, reset } = useForm<{ title: string; product_ids: number[] }>({
+    const { data, setData, post, processing, errors, reset } = useForm<{ title: string }>({
         title: '',
-        product_ids: [],
     });
     const page = usePage<{ flash: { createdStream?: { ws_url: string; stream_key: string } } }>();
 
     useEffect(() => {
         setRows(streams);
     }, [streams]);
-
-    // Fetch products from server with debouncing
-    useEffect(() => {
-        const fetchProducts = async () => {
-            setIsLoadingProducts(true);
-            try {
-                const response = await axios.get('/products-search', {
-                    params: {
-                        q: productSearchQuery,
-                        limit: 10,
-                    },
-                });
-                setSearchedProducts(response.data);
-            } catch (error) {
-                console.error('Failed to fetch products:', error);
-                setSearchedProducts([]);
-            } finally {
-                setIsLoadingProducts(false);
-            }
-        };
-
-        // Debounce the search
-        const timeoutId = setTimeout(() => {
-            if (productComboboxOpen) {
-                fetchProducts();
-            }
-        }, 300);
-
-        return () => clearTimeout(timeoutId);
-    }, [productSearchQuery, productComboboxOpen]);
 
     // Check for flash data with created stream credentials
     useEffect(() => {
@@ -245,7 +198,6 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
     const closeDialog = () => {
         setIsDialogOpen(false);
         reset();
-        setProductSearchQuery('');
     };
 
     const closeSuccessDialog = () => {
@@ -257,27 +209,6 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
         navigator.clipboard.writeText(text);
         toast.success(`${label} copied to clipboard`);
     };
-
-    // Memoized selected products for badge display
-    const selectedProducts = useMemo(() => {
-        return data.product_ids
-            .map(id => searchedProducts.find(p => p.id === id))
-            .filter((p): p is ProductOption => p !== undefined);
-    }, [data.product_ids, searchedProducts]);
-
-    // Optimized toggle handler
-    const toggleProduct = useCallback((productId: number) => {
-        const isSelected = data.product_ids.includes(productId);
-        setData('product_ids', isSelected
-            ? data.product_ids.filter(id => id !== productId)
-            : [...data.product_ids, productId]
-        );
-    }, [data.product_ids, setData]);
-
-    // Optimized remove handler
-    const removeProduct = useCallback((productId: number) => {
-        setData('product_ids', data.product_ids.filter(id => id !== productId));
-    }, [data.product_ids, setData]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -420,111 +351,6 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
                                 required
                             />
                             {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Products (Optional)</Label>
-                            <p className="text-sm text-muted-foreground">Select products to feature in this livestream</p>
-
-                            {/* Combobox for selecting products */}
-                            <Popover open={productComboboxOpen} onOpenChange={setProductComboboxOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={productComboboxOpen}
-                                        className="w-full justify-between"
-                                        disabled={processing}
-                                    >
-                                        <span className="truncate">
-                                            {data.product_ids.length > 0
-                                                ? `${data.product_ids.length} product(s) selected`
-                                                : 'Search and select products...'}
-                                        </span>
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-full p-0" align="start">
-                                    <Command shouldFilter={false}>
-                                        <CommandInput
-                                            placeholder="Search products..."
-                                            className="h-9"
-                                            value={productSearchQuery}
-                                            onValueChange={setProductSearchQuery}
-                                        />
-                                        <CommandList>
-                                            {isLoadingProducts ? (
-                                                <div className="py-6 text-center text-sm text-muted-foreground">
-                                                    Loading products...
-                                                </div>
-                                            ) : searchedProducts.length === 0 ? (
-                                                <CommandEmpty>
-                                                    {productSearchQuery ? 'No products found.' : 'Start typing to search products...'}
-                                                </CommandEmpty>
-                                            ) : (
-                                                <CommandGroup>
-                                                    {searchedProducts.map((product) => {
-                                                        const isSelected = data.product_ids.includes(product.id);
-                                                        return (
-                                                            <CommandItem
-                                                                key={product.id}
-                                                                value={product.id.toString()}
-                                                                onSelect={() => toggleProduct(product.id)}
-                                                            >
-                                                                <div className="flex items-center gap-2 flex-1">
-                                                                    {product.image ? (
-                                                                        <img
-                                                                            src={product.image}
-                                                                            alt={product.name}
-                                                                            className="h-8 w-8 rounded object-cover flex-shrink-0"
-                                                                        />
-                                                                    ) : (
-                                                                        <div className="h-8 w-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                                                                            <span className="text-xs text-muted-foreground">No img</span>
-                                                                        </div>
-                                                                    )}
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <p className="font-medium text-sm truncate">{product.name}</p>
-                                                                        <p className="text-xs text-muted-foreground">{product.price}</p>
-                                                                    </div>
-                                                                </div>
-                                                                <Check
-                                                                    className={cn(
-                                                                        "ml-2 h-4 w-4 flex-shrink-0",
-                                                                        isSelected ? "opacity-100" : "opacity-0"
-                                                                    )}
-                                                                />
-                                                            </CommandItem>
-                                                        );
-                                                    })}
-                                                </CommandGroup>
-                                            )}
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-
-                            {/* Display selected products as badges */}
-                            {selectedProducts.length > 0 && (
-                                <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30">
-                                    {selectedProducts.map((product) => (
-                                        <Badge
-                                            key={product.id}
-                                            variant="secondary"
-                                            className="pl-2 pr-1 py-1 gap-1"
-                                        >
-                                            <span className="truncate max-w-[150px]">{product.name}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => removeProduct(product.id)}
-                                                className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
-                                            >
-                                                <X className="h-3 w-3" />
-                                            </button>
-                                        </Badge>
-                                    ))}
-                                </div>
-                            )}
                         </div>
 
                         <DialogFooter className="gap-2 sm:space-x-2">

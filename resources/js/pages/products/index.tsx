@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/livestream/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { index as productsIndexRoute, store as productsStoreRoute, update as productsUpdateRoute, destroy as productsDestroyRoute, importFromUrl as productsImportFromUrlRoute } from '@/routes/products';
+import { index as productsIndexRoute, store as productsStoreRoute, update as productsUpdateRoute, destroy as productsDestroyRoute, importFromUrl as productsImportFromUrlRoute, toggleVisibility as productsToggleVisibilityRoute, show as productsShowRoute } from '@/routes/products';
 import { destroy as deleteImageRoute } from '@/routes/product-images';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
@@ -32,6 +32,8 @@ import {
 } from '@tanstack/react-table';
 import { ArrowUpDown, Plus, Pencil, Trash2, X, ImagePlus, Link, ExternalLink } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
+import { Switch } from '@/components/ui/switch';
+import { Spinner } from '@/components/ui/spinner';
 
 type ProductImage = {
     id: number;
@@ -45,6 +47,7 @@ type ProductRecord = {
     description: string | null;
     price: string;
     link: string | null;
+    is_show: boolean;
     category: { id: number; name: string } | null;
     images: ProductImage[];
     created_at: string;
@@ -81,6 +84,7 @@ export default function ProductsIndex({ products = [], categories = [] }: Produc
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState<number | null>(null);
+    const [togglingVisibilityIds, setTogglingVisibilityIds] = useState<number[]>([]);
     const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [importUrl, setImportUrl] = useState('');
@@ -159,6 +163,40 @@ export default function ProductsIndex({ products = [], categories = [] }: Produc
             ),
         },
         {
+            accessorKey: 'is_show',
+            header: () => <span className="text-sm font-semibold">Visible</span>,
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2">
+                    <Switch
+                        checked={row.original.is_show}
+                        disabled={togglingVisibilityIds.includes(row.original.id)}
+                        onCheckedChange={() => {
+                            const id = row.original.id;
+                            setTogglingVisibilityIds((prev) =>
+                                prev.includes(id) ? prev : [...prev, id],
+                            );
+
+                            router.patch(
+                                productsToggleVisibilityRoute({ product: id }).url,
+                                {},
+                                {
+                                    preserveScroll: true,
+                                    onFinish: () => {
+                                        setTogglingVisibilityIds((prev) =>
+                                            prev.filter((currentId) => currentId !== id),
+                                        );
+                                    },
+                                },
+                            );
+                        }}
+                    />
+                    {togglingVisibilityIds.includes(row.original.id) && (
+                        <Spinner className="h-4 w-4 text-muted-foreground" />
+                    )}
+                </div>
+            ),
+        },
+        {
             accessorKey: 'link',
             header: () => <span className="text-sm font-semibold">Link</span>,
             cell: ({ row }) => (
@@ -182,6 +220,18 @@ export default function ProductsIndex({ products = [], categories = [] }: Produc
             header: () => <span className="text-sm font-semibold">Actions</span>,
             cell: ({ row }) => (
                 <div className="flex items-center gap-1">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            router.visit(productsShowRoute({ product: row.original.id }).url);
+                        }}
+                        title="View product details"
+                    >
+                        <ExternalLink className="h-4 w-4" />
+                    </Button>
                     <Button
                         variant="ghost"
                         size="icon"
@@ -466,11 +516,10 @@ export default function ProductsIndex({ products = [], categories = [] }: Produc
                                 <TableBody>
                                     {table.getRowModel().rows.length ? (
                                         table.getRowModel().rows.map((row) => (
-                                            <TableRow
-                                                key={row.id}
-                                                className="cursor-pointer hover:bg-muted/50"
-                                                onClick={() => router.visit(`/products/${row.original.id}`)}
-                                            >
+                                        <TableRow
+                                            key={row.id}
+                                            className="hover:bg-muted/50"
+                                        >
                                                 {row.getVisibleCells().map((cell) => (
                                                     <TableCell key={cell.id}>
                                                         {flexRender(

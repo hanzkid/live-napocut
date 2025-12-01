@@ -21,6 +21,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('product-images/{image}', [ProductController::class, 'deleteImage'])->name('product-images.destroy');
     Route::post('livestream/{livestream}/products', [LivestreamController::class, 'attachProduct'])->name('livestream.products.attach');
     Route::delete('livestream/{livestream}/products/{product}', [LivestreamController::class, 'detachProduct'])->name('livestream.products.detach');
+    Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility'])->name('products.toggle-visibility');
 });
 
 require __DIR__ . '/settings.php';

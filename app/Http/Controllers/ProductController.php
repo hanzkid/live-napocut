@@ -25,6 +25,7 @@ class ProductController extends Controller
                     'description' => $product->description,
                     'price' => $product->formatted_price,
                     'link' => $product->link,
+                    'is_show' => $product->is_show,
                     'category' => $product->category ? [
                         'id' => $product->category->id,
                         'name' => $product->category->name,
@@ -80,6 +81,7 @@ class ProductController extends Controller
         $limit = min((int) $request->input('limit', 10), 50); // Max 50 items
 
         $products = Product::with('images')
+            ->where('is_show', true)
             ->when($query, function ($queryBuilder) use ($query) {
                 $queryBuilder->where('name', 'like', "%{$query}%");
             })
@@ -277,5 +279,15 @@ class ProductController extends Controller
         $image->delete();
 
         return back()->with('success', 'Image deleted successfully.');
+    }
+
+    public function toggleVisibility(Product $product): RedirectResponse
+    {
+        $product->is_show = ! $product->is_show;
+        $product->save();
+
+        return redirect()
+            ->back()
+            ->with('success', 'Product visibility updated.');
     }
 }

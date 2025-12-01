@@ -25,8 +25,16 @@ class ProductImportService
         // Extract JSON-LD data
         $jsonLdData = $this->extractJsonLd($html);
 
+        // Extract category data from Nuxt SSR state
+        $categoryData = $this->extractCategory($html);
+
         // Parse and validate product data
         $productData = $this->parseProductData($jsonLdData, $url);
+
+        // Add category data to product data
+        if ($categoryData) {
+            $productData['category'] = $categoryData;
+        }
 
         return $productData;
     }
@@ -95,6 +103,66 @@ class ProductImportService
         }
 
         throw new Exception("No Product schema found in JSON-LD data");
+    }
+
+    /**
+     * Extract category data from Nuxt SSR dehydrated state
+     *
+     * @param string $html
+     * @return array|null
+     */
+    private function extractCategory(string $html): ?array
+    {
+        // Extract the __NUXT_DATA__ script content
+        $pattern = '/<script[^>]*id="__NUXT_DATA__"[^>]*>(.*?)<\/script>/s';
+
+        if (!preg_match($pattern, $html, $scriptMatches)) {
+            Log::warning('__NUXT_DATA__ script not found in HTML');
+            return null;
+        }
+
+        $jsonData = trim($scriptMatches[1]);
+        $data = json_decode($jsonData, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            Log::warning('Failed to parse __NUXT_DATA__ JSON');
+            return null;
+        }
+
+        // Search for vendorCategories pattern in the array
+        // Pattern: look for array with structure like [{"id": X, "name": Y, "image": Z, ...}]
+        for ($i = 0; $i < count($data); $i++) {
+            $item = $data[$i];
+
+            // Look for an object that looks like a category
+            if (is_array($item) && !isset($item[0])) {
+                // Check if it has the category structure
+                if (isset($item['id']) && isset($item['name']) && isset($item['image'])) {
+                    // Resolve references if needed
+                    $categoryId = is_numeric($item['id']) && $item['id'] < count($data)
+                        ? $data[$item['id']]
+                        : $item['id'];
+
+                    $categoryName = is_numeric($item['name']) && $item['name'] < count($data)
+                        ? $data[$item['name']]
+                        : $item['name'];
+
+                    // Validate that we got actual values, not more references
+                    if (is_numeric($categoryId) && is_string($categoryName) && !empty($categoryName)) {
+                        // Skip if this looks like product data (has productCode, weight, etc.)
+                        if (!isset($item['productCode']) && !isset($item['weight'])) {
+                            return [
+                                'id' => (int) $categoryId,
+                                'name' => $categoryName,
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        Log::warning('Category data not found in Nuxt SSR state');
+        return null;
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
+use App\Models\LiveStream;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -16,8 +17,11 @@ class FrontController extends Controller
         $livekit = config('livekit');
         $token = session('livekit_token');
 
-        $activeStream = \App\Models\LiveStream::where('is_active', true)
-            ->with(['products.images'])
+        $activeStream = LiveStream::where('is_active', true)
+            ->with(['products' => function ($query) {
+                $query->where('is_show', true)
+                    ->with(['images', 'category']);
+            }])
             ->latest()
             ->first();
 
@@ -53,7 +57,6 @@ class FrontController extends Controller
             session(['livekit_token' => $token, 'is_guest' => true]);
         }
 
-        // Format products for frontend
         $products = [];
         if ($activeStream) {
             $products = $activeStream->products->map(function ($product) {
@@ -67,7 +70,7 @@ class FrontController extends Controller
                     'link' => $product->link,
                     'category' => $product->category?->name,
                     'image' => $product->images->first()?->url,
-                    'images' => $product->images->map(fn($img) => $img->url)->toArray(),
+                    'images' => $product->images->map(fn ($img) => $img->url)->toArray(),
                 ];
             })->toArray();
         }
@@ -90,7 +93,7 @@ class FrontController extends Controller
             'name' => ['required', 'string', 'max:255'],
         ]);
 
-        $activeStream = \App\Models\LiveStream::where('is_active', true)
+        $activeStream = LiveStream::where('is_active', true)
             ->latest()
             ->first();
 

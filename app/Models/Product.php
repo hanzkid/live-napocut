@@ -14,10 +14,12 @@ class Product extends Model
         'price',
         'link',
         'category_id',
+        'is_show',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'is_show' => 'boolean',
     ];
 
     protected $appends = [

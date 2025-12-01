@@ -76,7 +76,6 @@ class LivestreamController extends Controller
             's3_path' => $streamData['s3_path'],
         ]);
 
-        // Sync products if provided
         if (!empty($validated['product_ids'])) {
             $livestream->products()->sync($validated['product_ids']);
         }
@@ -96,7 +95,6 @@ class LivestreamController extends Controller
             'product_id' => ['required', 'exists:products,id'],
         ]);
 
-        // Check if product is already attached
         if ($livestream->products()->where('product_id', $validated['product_id'])->exists()) {
             return response()->json(['message' => 'Product already attached'], 400);
         }
