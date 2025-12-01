@@ -6,6 +6,7 @@ use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
 use App\Models\LiveStream;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -18,12 +19,12 @@ class FrontController extends Controller
         $token = session('livekit_token');
 
         $activeStream = LiveStream::where('is_active', true)
-            ->with(['products' => function ($query) {
-                $query->where('is_show', true)
-                    ->with(['images', 'category']);
-            }])
             ->latest()
             ->first();
+        
+        $rawProducts = Product::where('is_show', true)
+            ->with(['images', 'category'])
+            ->get();
 
         $hlsUrl = null;
         if ($activeStream && $activeStream->s3_path) {
@@ -59,7 +60,7 @@ class FrontController extends Controller
 
         $products = [];
         if ($activeStream) {
-            $products = $activeStream->products->map(function ($product) {
+            $products = $rawProducts->map(function ($product) {
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
