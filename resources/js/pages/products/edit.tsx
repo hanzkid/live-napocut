@@ -9,7 +9,7 @@ import { destroy as deleteImageRoute } from '@/routes/product-images';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
 import { ImagePlus, X } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Editor } from "@/components/blocks/editor-x/editor"
 import { SerializedEditorState } from "lexical"
 
@@ -46,139 +46,12 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
     {
         title: 'Edit Product',
+        href: '#',
     },
 ];
 
-// Helper to convert HTML to basic Lexical state
-const htmlToLexicalState = (html: string): SerializedEditorState => {
-    if (!html) {
-        return {
-            root: {
-                children: [{
-                    children: [],
-                    direction: "ltr",
-                    format: "",
-                    indent: 0,
-                    type: "paragraph",
-                    version: 1,
-                }],
-                direction: "ltr",
-                format: "",
-                indent: 0,
-                type: "root",
-                version: 1,
-            },
-        } as unknown as SerializedEditorState;
-    }
-    
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    
-    const children: any[] = [];
-    const processNode = (node: Node): any => {
-        if (node.nodeType === Node.TEXT_NODE) {
-            const text = node.textContent?.trim();
-            if (text) {
-                return {
-                    detail: 0,
-                    format: 0,
-                    mode: "normal",
-                    style: "",
-                    text: text,
-                    type: "text",
-                    version: 1,
-                };
-            }
-            return null;
-        }
-        
-        if (node.nodeType === Node.ELEMENT_NODE) {
-            const element = node as Element;
-            const tagName = element.tagName.toLowerCase();
-            
-            if (tagName === 'p' || tagName === 'div') {
-                const paragraphChildren: any[] = [];
-                Array.from(element.childNodes).forEach(child => {
-                    const processed = processNode(child);
-                    if (processed) {
-                        if (processed.type === 'text') {
-                            paragraphChildren.push(processed);
-                        } else if (processed.children) {
-                            paragraphChildren.push(...processed.children);
-                        }
-                    }
-                });
-                
-                return {
-                    children: paragraphChildren.length > 0 ? paragraphChildren : [],
-                    direction: "ltr",
-                    format: "",
-                    indent: 0,
-                    type: "paragraph",
-                    version: 1,
-                };
-            }
-            
-            const elementChildren: any[] = [];
-            Array.from(element.childNodes).forEach(child => {
-                const processed = processNode(child);
-                if (processed) {
-                    if (processed.type === 'text') {
-                        elementChildren.push(processed);
-                    } else if (processed.children) {
-                        elementChildren.push(...processed.children);
-                    }
-                }
-            });
-            
-            if (elementChildren.length > 0) {
-                return {
-                    children: elementChildren,
-                    direction: "ltr",
-                    format: "",
-                    indent: 0,
-                    type: "paragraph",
-                    version: 1,
-                };
-            }
-        }
-        
-        return null;
-    };
-    
-    Array.from(tempDiv.childNodes).forEach(node => {
-        const processed = processNode(node);
-        if (processed) {
-            if (processed.type === 'paragraph') {
-                children.push(processed);
-            } else if (processed.children) {
-                children.push(...processed.children);
-            }
-        }
-    });
-    
-    if (children.length === 0) {
-        children.push({
-            children: [],
-            direction: "ltr",
-            format: "",
-            indent: 0,
-            type: "paragraph",
-            version: 1,
-        });
-    }
-    
-    return {
-        root: {
-            children,
-            direction: "ltr",
-            format: "",
-            indent: 0,
-            type: "root",
-            version: 1,
-        },
-    } as unknown as SerializedEditorState;
-};
+// Simple helper: just store HTML as-is, Lexical will parse it
+// We'll pass the HTML directly to the editor and let it handle parsing
 
 // Helper to parse price (remove currency formatting)
 const parsePrice = (priceString: string): string => {
@@ -192,33 +65,11 @@ const parsePrice = (priceString: string): string => {
 export default function ProductsEdit({ product, categories = [] }: ProductsEditProps) {
     const [imagePreviews, setImagePreviews] = useState<string[]>(product.images.map(img => img.url));
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [editorState, setEditorState] = useState<SerializedEditorState>()
+    const [editorState, setEditorState] = useState<SerializedEditorState | undefined>(undefined)
     
     // Helper to convert Lexical state to HTML
     const lexicalStateToHtml = (state: SerializedEditorState | undefined): string => {
-        if (!state?.root?.children) return '';
-        
-        const nodeToHtml = (node: any): string => {
-            if (node.type === 'text') {
-                return node.text || '';
-            }
-            
-            if (node.type === 'paragraph') {
-                const content = node.children 
-                    ? node.children.map(nodeToHtml).join('')
-                    : '';
-                return content ? `<p>${content}</p>` : '<p></p>';
-            }
-            
-            if (node.children && Array.isArray(node.children)) {
-                return node.children.map(nodeToHtml).join('');
-            }
-            
-            return '';
-        };
-        
-        const html = state?.root.children.map(nodeToHtml).join('');
-        return html || '';
+        return  '';
     };
 
     const parsedPrice = parsePrice(product.price);
@@ -239,11 +90,7 @@ export default function ProductsEdit({ product, categories = [] }: ProductsEditP
         images: [],
     });
 
-    useEffect(() => {
-        if (product.description) {
-            setEditorState(htmlToLexicalState(product.description));
-        }
-    }, [product.description]);
+    // HTML is passed directly to Editor component, no conversion needed
 
     const handleDeleteImage = (imageId: number) => {
         if (confirm('Are you sure you want to delete this image?')) {
@@ -345,6 +192,7 @@ export default function ProductsEdit({ product, categories = [] }: ProductsEditP
                             <div className="space-y-2">
                                 <Label htmlFor="product-description">Description</Label>
                                 <Editor
+                                    
                                     editorSerializedState={editorState}
                                     onSerializedChange={(value) => setEditorState(value)}
                                 />

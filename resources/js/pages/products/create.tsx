@@ -42,7 +42,19 @@ export default function ProductsCreate({ categories = [] }: ProductsCreateProps)
         
         const nodeToHtml = (node: any): string => {
             if (node.type === 'text') {
-                return node.text || '';
+                let text = node.text || '';
+                // Handle text formatting
+                if (node.format) {
+                    const format = node.format;
+                    if (format & 1) text = `<strong>${text}</strong>`; // Bold
+                    if (format & 2) text = `<em>${text}</em>`; // Italic
+                    if (format & 4) text = `<u>${text}</u>`; // Underline
+                    if (format & 8) text = `<s>${text}</s>`; // Strikethrough
+                    if (format & 16) text = `<code>${text}</code>`; // Code
+                    if (format & 32) text = `<sub>${text}</sub>`; // Subscript
+                    if (format & 64) text = `<sup>${text}</sup>`; // Superscript
+                }
+                return text;
             }
             
             if (node.type === 'paragraph') {
@@ -52,6 +64,53 @@ export default function ProductsCreate({ categories = [] }: ProductsCreateProps)
                 return content ? `<p>${content}</p>` : '<p></p>';
             }
             
+            if (node.type === 'heading') {
+                const tag = node.tag || 'h1'; // h1, h2, h3, etc.
+                const content = node.children 
+                    ? node.children.map(nodeToHtml).join('')
+                    : '';
+                return content ? `<${tag}>${content}</${tag}>` : `<${tag}></${tag}>`;
+            }
+            
+            if (node.type === 'quote') {
+                const content = node.children 
+                    ? node.children.map(nodeToHtml).join('')
+                    : '';
+                return content ? `<blockquote>${content}</blockquote>` : '<blockquote></blockquote>';
+            }
+            
+            if (node.type === 'code') {
+                const content = node.children 
+                    ? node.children.map(nodeToHtml).join('')
+                    : '';
+                return content ? `<pre><code>${content}</code></pre>` : '<pre><code></code></pre>';
+            }
+            
+            if (node.type === 'list') {
+                const listType = node.listType || 'bullet'; // 'bullet' or 'number'
+                const tag = listType === 'number' ? 'ol' : 'ul';
+                const content = node.children 
+                    ? node.children.map(nodeToHtml).join('')
+                    : '';
+                return content ? `<${tag}>${content}</${tag}>` : `<${tag}></${tag}>`;
+            }
+            
+            if (node.type === 'listitem') {
+                const content = node.children 
+                    ? node.children.map(nodeToHtml).join('')
+                    : '';
+                return content ? `<li>${content}</li>` : '<li></li>';
+            }
+            
+            if (node.type === 'link') {
+                const url = node.url || '#';
+                const content = node.children 
+                    ? node.children.map(nodeToHtml).join('')
+                    : '';
+                return `<a href="${url}">${content}</a>`;
+            }
+            
+            // Handle nested children for other node types
             if (node.children && Array.isArray(node.children)) {
                 return node.children.map(nodeToHtml).join('');
             }
