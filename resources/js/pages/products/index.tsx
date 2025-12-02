@@ -34,6 +34,9 @@ import { ArrowUpDown, Plus, Pencil, Trash2, X, ImagePlus, Link, ExternalLink } f
 import { useEffect, useState, useRef } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Spinner } from '@/components/ui/spinner';
+import { Editor } from "@/components/blocks/editor-x/editor"
+import { SerializedEditorState } from "lexical"
+
 
 type ProductImage = {
     id: number;
@@ -90,7 +93,7 @@ export default function ProductsIndex({ products = [], categories = [] }: Produc
     const [importUrl, setImportUrl] = useState('');
     const [isImporting, setIsImporting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
+    const [editorState, setEditorState] = useState<SerializedEditorState>()
     const { data, setData, post, processing, errors, reset } = useForm<{
         name: string;
         description: string;
@@ -598,12 +601,10 @@ export default function ProductsIndex({ products = [], categories = [] }: Produc
 
                         <div className="space-y-2">
                             <Label htmlFor="product-description">Description</Label>
-                            <RichTextEditor
-                                value={data.description}
-                                onChange={(value) => setData('description', value)}
-                                placeholder="Product description with formatting support..."
-                                disabled={processing}
-                            />
+                            <Editor
+                                editorSerializedState={editorState}
+                                onSerializedChange={(value) => setEditorState(value)}
+                                />
                             {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
                         </div>
 
