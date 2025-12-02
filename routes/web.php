@@ -16,7 +16,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('livestream', LivestreamController::class)->names('livestream');
     Route::resource('categories', CategoryController::class)->except(['create', 'edit']);
     Route::resource('discount-codes', DiscountCodeController::class)->except(['create', 'edit']);
-    Route::resource('products', ProductController::class)->except(['create', 'edit']);
+    Route::resource('products', ProductController::class);
     Route::get('products-search', [ProductController::class, 'search'])->name('products.search');
     Route::post('products/import-from-url', [ProductController::class, 'importFromUrl'])->name('products.import-from-url');
     Route::post('products/{product}/images', [ProductController::class, 'uploadImages'])->name('products.images.upload');

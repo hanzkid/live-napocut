@@ -49,6 +49,46 @@ class ProductController extends Controller
         ]);
     }
 
+    public function create(): Response
+    {
+        $categories = \App\Models\Category::select('id', 'name')->orderBy('name')->get();
+
+        return Inertia::render('products/create', [
+            'categories' => $categories,
+        ]);
+    }
+
+    public function edit(Product $product): Response
+    {
+        $product->load(['images', 'category']);
+
+        $formattedProduct = [
+            'id' => $product->id,
+            'name' => $product->name,
+            'description' => $product->description,
+            'price' => $product->formatted_price,
+            'link' => $product->link,
+            'category' => $product->category ? [
+                'id' => $product->category->id,
+                'name' => $product->category->name,
+            ] : null,
+            'images' => $product->images->map(function ($image) {
+                return [
+                    'id' => $image->id,
+                    'url' => $image->url,
+                    'order' => $image->order,
+                ];
+            }),
+        ];
+
+        $categories = \App\Models\Category::select('id', 'name')->orderBy('name')->get();
+
+        return Inertia::render('products/edit', [
+            'product' => $formattedProduct,
+            'categories' => $categories,
+        ]);
+    }
+
     public function show(Product $product): Response
     {
         $product->load('images');
