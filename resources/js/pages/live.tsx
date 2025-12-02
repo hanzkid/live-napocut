@@ -124,7 +124,7 @@ const Index = (props: {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
+    <div className="fixed inset-0 w-full h-[100dvh] overflow-hidden bg-black">
       {props.is_active && props.livekit_token ? (
         <LiveKitRoom
           key={props.livekit_token}
