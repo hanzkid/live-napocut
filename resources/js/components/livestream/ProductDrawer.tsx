@@ -136,9 +136,10 @@ export const ProductDrawer = ({
                                                 <span className="font-mono font-bold text-sm block mb-0.5">
                                                     {discount.code}
                                                 </span>
-                                                <p className="text-[10px] opacity-90">
-                                                    {discount.description}
-                                                </p>
+                                                <p 
+                                                    className="text-[10px] opacity-90"
+                                                    dangerouslySetInnerHTML={{ __html: discount.description || '' }}
+                                                />
                                             </div>
                                             <div className="flex-shrink-0 bg-white/20 rounded p-1">
                                                 {copiedCode === discount.code ? (

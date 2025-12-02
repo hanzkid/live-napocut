@@ -28,8 +28,11 @@ class ProductImportService
         // Extract category data from Nuxt SSR state
         $categoryData = $this->extractCategory($html);
 
+        // Extract description from HTML
+        $description = $this->extractDescriptionFromHtml($html);
+
         // Parse and validate product data
-        $productData = $this->parseProductData($jsonLdData, $url);
+        $productData = $this->parseProductData($jsonLdData, $url, $description);
 
         // Add category data to product data
         if ($categoryData) {
@@ -106,6 +109,61 @@ class ProductImportService
     }
 
     /**
+     * Extract description from HTML element
+     *
+     * @param string $html
+     * @return string
+     */
+    private function extractDescriptionFromHtml(string $html): string
+    {
+        // Suppress warnings from DOMDocument
+        libxml_use_internal_errors(true);
+
+        $dom = new DOMDocument();
+        $dom->loadHTML($html);
+
+        libxml_clear_errors();
+
+        $xpath = new DOMXPath($dom);
+        
+        // Query for div#ts-description>div>div.quill-editor-v2
+        $nodes = $xpath->query("//div[@id='ts-description']/div/div[contains(@class, 'quill-editor-v2')]");
+
+        if ($nodes->length > 0) {
+            $descriptionNode = $nodes->item(0);
+            
+            // Remove inline color styles from all elements to support dark mode
+            $allElements = $xpath->query('.//*', $descriptionNode);
+            foreach ($allElements as $element) {
+                if ($element->hasAttribute('style')) {
+                    $style = $element->getAttribute('style');
+                    // Remove color and background-color from inline styles
+                    $style = preg_replace('/color\s*:\s*[^;]+(!important)?\s*;?/i', '', $style);
+                    $style = preg_replace('/background-color\s*:\s*[^;]+(!important)?\s*;?/i', '', $style);
+                    $style = trim($style, ' ;');
+                    
+                    if (empty($style)) {
+                        $element->removeAttribute('style');
+                    } else {
+                        $element->setAttribute('style', $style);
+                    }
+                }
+            }
+            
+            $innerHtml = '';
+            
+            // Get all child nodes and convert to HTML string
+            foreach ($descriptionNode->childNodes as $child) {
+                $innerHtml .= $dom->saveHTML($child);
+            }
+            
+            return trim($innerHtml);
+        }
+
+        return '';
+    }
+
+    /**
      * Extract category data from Nuxt SSR dehydrated state
      *
      * @param string $html
@@ -170,18 +228,21 @@ class ProductImportService
      *
      * @param array $jsonLdData
      * @param string $sourceUrl
+     * @param string $description
      * @return array
      * @throws Exception
      */
-    private function parseProductData(array $jsonLdData, string $sourceUrl): array
+    private function parseProductData(array $jsonLdData, string $sourceUrl, string $description = ''): array
     {
         // Extract name
         if (!isset($jsonLdData['name']) || empty($jsonLdData['name'])) {
             throw new Exception("Product name not found in structured data");
         }
 
-        // Extract description
-        $description = $jsonLdData['description'] ?? '';
+        // Use description from HTML if available, otherwise fallback to JSON-LD
+        if (empty($description)) {
+            $description = $jsonLdData['description'] ?? '';
+        }
 
         // Extract price from offers
         $price = $this->extractPrice($jsonLdData);
@@ -195,7 +256,7 @@ class ProductImportService
 
         return [
             'name' => $this->cleanText($jsonLdData['name']),
-            'description' => $this->cleanText($description),
+            'description' => $description,
             'price' => $price,
             'link' => $sourceUrl,
             'images' => $images,

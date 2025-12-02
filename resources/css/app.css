@@ -151,4 +151,53 @@
     .scrollbar-hide::-webkit-scrollbar {
         display: none;  /* Chrome, Safari and Opera */
     }
+
+    /* Prose styling for HTML content rendered via dangerouslySetInnerHTML */
+    .prose p {
+        @apply leading-7;
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .prose p:first-child {
+        margin-top: 0;
+    }
+
+    .prose p:last-child {
+        margin-bottom: 0;
+    }
+
+    .prose-sm p {
+        @apply text-sm leading-6;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .prose-sm p:first-child {
+        margin-top: 0;
+    }
+
+    .prose-sm p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Override inline color styles in dark mode for product descriptions */
+    /* This ensures dark mode text colors work even if HTML has inline color styles */
+    .dark .prose,
+    .dark .prose-sm {
+        color: var(--muted-foreground);
+    }
+
+    .dark .prose p,
+    .dark .prose-sm p,
+    .dark .prose *[style*="color"],
+    .dark .prose-sm *[style*="color"] {
+        color: var(--muted-foreground) !important;
+    }
+
+    /* Also handle elements with style attribute containing color */
+    .dark .prose [style*="color"],
+    .dark .prose-sm [style*="color"] {
+        color: var(--muted-foreground) !important;
+    }
 }

@@ -120,9 +120,10 @@ export const ProductModal = ({ product, onClose }: ProductModalProps) => {
         {product.description && (
           <div className="space-y-2">
             <h3 className="font-semibold">Description</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              {product.description}
-            </p>
+            <div
+              className="text-sm prose prose-sm max-w-none text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
           </div>
         )}
 
