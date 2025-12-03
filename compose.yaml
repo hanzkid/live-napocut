@@ -1,4 +1,17 @@
 services:
+    nightwatch-agent:
+        image: laravelphp/nightwatch-agent:latest
+        environment:
+        - NIGHTWATCH_TOKEN=${NIGHTWATCH_TOKEN}
+        healthcheck:
+            test: php nightwatch-status
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 5s
+        restart: unless-stopped
+        networks:
+        - sail
     laravel.test:
         build:
             context: './vendor/laravel/sail/runtimes/8.4'
