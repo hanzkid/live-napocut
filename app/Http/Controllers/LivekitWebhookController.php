@@ -38,9 +38,7 @@ class LivekitWebhookController extends Controller
                     break;
 
                 default:
-                    Log::info('LiveKit webhook event received', [
-                        'event' => $event->getEvent(),
-                    ]);
+                    // Unknown event type, no action needed
             }
 
             return response()->json(['success' => true], 200);
@@ -67,15 +65,6 @@ class LivekitWebhookController extends Controller
 
         if ($livestream) {
             $livestream->update(['is_active' => true]);
-
-            Log::info('Ingress started', [
-                'ingress_id' => $ingressId,
-                'livestream_id' => $livestream->id,
-            ]);
-        } else {
-            Log::warning('Ingress started for unknown livestream', [
-                'ingress_id' => $ingressId,
-            ]);
         }
     }
 
@@ -91,15 +80,6 @@ class LivekitWebhookController extends Controller
 
         if ($livestream) {
             $livestream->update(['is_active' => false]);
-
-            Log::info('Ingress ended', [
-                'ingress_id' => $ingressId,
-                'livestream_id' => $livestream->id,
-            ]);
-        } else {
-            Log::warning('Ingress ended for unknown livestream', [
-                'ingress_id' => $ingressId,
-            ]);
         }
     }
 }
