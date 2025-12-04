@@ -31,3 +31,7 @@ require __DIR__ . '/settings.php';
 Route::get('/', [FrontController::class, 'livestream'])->name('live');
 
 Route::post('live', [FrontController::class, 'joinLivestream'])->name('join-livestream');
+
+Route::get('/webrtc', [FrontController::class, 'webrtc'])->name('webrtc');
+
+Route::post('/webrtc', [FrontController::class, 'joinWebrtc'])->name('join-webrtc');
