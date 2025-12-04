@@ -26,7 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility'])->name('products.toggle-visibility');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';
 
 Route::get('/', [FrontController::class, 'livestream'])->name('live');
 

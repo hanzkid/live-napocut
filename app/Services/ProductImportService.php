@@ -13,8 +13,9 @@ class ProductImportService
     /**
      * Import product data from a URL by scraping JSON-LD structured data
      *
-     * @param string $url The URL to scrape
+     * @param  string  $url  The URL to scrape
      * @return array The parsed product data
+     *
      * @throws Exception If scraping fails or data is invalid
      */
     public function importFromUrl(string $url): array
@@ -45,8 +46,6 @@ class ProductImportService
     /**
      * Fetch HTML content from URL
      *
-     * @param string $url
-     * @return string
      * @throws Exception
      */
     private function fetchHtml(string $url): string
@@ -54,13 +53,13 @@ class ProductImportService
         try {
             $response = Http::timeout(30)->get($url);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 throw new Exception("Failed to fetch URL. HTTP status: {$response->status()}");
             }
 
             return $response->body();
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            throw new Exception("Connection error: Unable to reach the URL");
+            throw new Exception('Connection error: Unable to reach the URL');
         } catch (Exception $e) {
             Log::error("Error fetching URL: {$url}", ['error' => $e->getMessage()]);
             throw new Exception("Failed to fetch URL: {$e->getMessage()}");
@@ -70,8 +69,6 @@ class ProductImportService
     /**
      * Extract JSON-LD structured data from HTML
      *
-     * @param string $html
-     * @return array
      * @throws Exception
      */
     private function extractJsonLd(string $html): array
@@ -79,7 +76,7 @@ class ProductImportService
         // Suppress warnings from DOMDocument
         libxml_use_internal_errors(true);
 
-        $dom = new DOMDocument();
+        $dom = new DOMDocument;
         $dom->loadHTML($html);
 
         libxml_clear_errors();
@@ -88,7 +85,7 @@ class ProductImportService
         $scripts = $xpath->query('//script[@type="application/ld+json"]');
 
         if ($scripts->length === 0) {
-            throw new Exception("No JSON-LD structured data found on the page");
+            throw new Exception('No JSON-LD structured data found on the page');
         }
 
         // Try to find Product schema
@@ -105,33 +102,30 @@ class ProductImportService
             }
         }
 
-        throw new Exception("No Product schema found in JSON-LD data");
+        throw new Exception('No Product schema found in JSON-LD data');
     }
 
     /**
      * Extract description from HTML element
-     *
-     * @param string $html
-     * @return string
      */
     private function extractDescriptionFromHtml(string $html): string
     {
         // Suppress warnings from DOMDocument
         libxml_use_internal_errors(true);
 
-        $dom = new DOMDocument();
+        $dom = new DOMDocument;
         $dom->loadHTML($html);
 
         libxml_clear_errors();
 
         $xpath = new DOMXPath($dom);
-        
+
         // Query for div#ts-description>div>div.quill-editor-v2
         $nodes = $xpath->query("//div[@id='ts-description']/div/div[contains(@class, 'quill-editor-v2')]");
 
         if ($nodes->length > 0) {
             $descriptionNode = $nodes->item(0);
-            
+
             // Remove inline color styles from all elements to support dark mode
             $allElements = $xpath->query('.//*', $descriptionNode);
             foreach ($allElements as $element) {
@@ -141,7 +135,7 @@ class ProductImportService
                     $style = preg_replace('/color\s*:\s*[^;]+(!important)?\s*;?/i', '', $style);
                     $style = preg_replace('/background-color\s*:\s*[^;]+(!important)?\s*;?/i', '', $style);
                     $style = trim($style, ' ;');
-                    
+
                     if (empty($style)) {
                         $element->removeAttribute('style');
                     } else {
@@ -149,14 +143,14 @@ class ProductImportService
                     }
                 }
             }
-            
+
             $innerHtml = '';
-            
+
             // Get all child nodes and convert to HTML string
             foreach ($descriptionNode->childNodes as $child) {
                 $innerHtml .= $dom->saveHTML($child);
             }
-            
+
             return trim($innerHtml);
         }
 
@@ -165,25 +159,24 @@ class ProductImportService
 
     /**
      * Extract category data from Nuxt SSR dehydrated state
-     *
-     * @param string $html
-     * @return array|null
      */
     private function extractCategory(string $html): ?array
     {
         // Extract the __NUXT_DATA__ script content
         $pattern = '/<script[^>]*id="__NUXT_DATA__"[^>]*>(.*?)<\/script>/s';
 
-        if (!preg_match($pattern, $html, $scriptMatches)) {
+        if (! preg_match($pattern, $html, $scriptMatches)) {
             Log::warning('__NUXT_DATA__ script not found in HTML');
+
             return null;
         }
 
         $jsonData = trim($scriptMatches[1]);
         $data = json_decode($jsonData, true);
 
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($data)) {
             Log::warning('Failed to parse __NUXT_DATA__ JSON');
+
             return null;
         }
 
@@ -193,7 +186,7 @@ class ProductImportService
             $item = $data[$i];
 
             // Look for an object that looks like a category
-            if (is_array($item) && !isset($item[0])) {
+            if (is_array($item) && ! isset($item[0])) {
                 // Check if it has the category structure
                 if (isset($item['id']) && isset($item['name']) && isset($item['image'])) {
                     // Resolve references if needed
@@ -206,9 +199,9 @@ class ProductImportService
                         : $item['name'];
 
                     // Validate that we got actual values, not more references
-                    if (is_numeric($categoryId) && is_string($categoryName) && !empty($categoryName)) {
+                    if (is_numeric($categoryId) && is_string($categoryName) && ! empty($categoryName)) {
                         // Skip if this looks like product data (has productCode, weight, etc.)
-                        if (!isset($item['productCode']) && !isset($item['weight'])) {
+                        if (! isset($item['productCode']) && ! isset($item['weight'])) {
                             return [
                                 'id' => (int) $categoryId,
                                 'name' => $categoryName,
@@ -220,23 +213,20 @@ class ProductImportService
         }
 
         Log::warning('Category data not found in Nuxt SSR state');
+
         return null;
     }
 
     /**
      * Parse and validate product data from JSON-LD
      *
-     * @param array $jsonLdData
-     * @param string $sourceUrl
-     * @param string $description
-     * @return array
      * @throws Exception
      */
     private function parseProductData(array $jsonLdData, string $sourceUrl, string $description = ''): array
     {
         // Extract name
-        if (!isset($jsonLdData['name']) || empty($jsonLdData['name'])) {
-            throw new Exception("Product name not found in structured data");
+        if (! isset($jsonLdData['name']) || empty($jsonLdData['name'])) {
+            throw new Exception('Product name not found in structured data');
         }
 
         // Use description from HTML if available, otherwise fallback to JSON-LD
@@ -251,7 +241,7 @@ class ProductImportService
         $images = $this->extractImages($jsonLdData);
 
         if (empty($images)) {
-            throw new Exception("No product images found");
+            throw new Exception('No product images found');
         }
 
         return [
@@ -265,9 +255,6 @@ class ProductImportService
 
     /**
      * Clean HTML entities and tags from text
-     *
-     * @param string $text
-     * @return string
      */
     private function cleanText(string $text): string
     {
@@ -287,27 +274,25 @@ class ProductImportService
     /**
      * Extract price from offers data
      *
-     * @param array $jsonLdData
-     * @return float
      * @throws Exception
      */
     private function extractPrice(array $jsonLdData): float
     {
-        if (!isset($jsonLdData['offers'])) {
-            throw new Exception("No price information found");
+        if (! isset($jsonLdData['offers'])) {
+            throw new Exception('No price information found');
         }
 
         $offers = $jsonLdData['offers'];
 
         // Handle array of offers
-        if (is_array($offers) && !isset($offers['price'])) {
+        if (is_array($offers) && ! isset($offers['price'])) {
             $offers = $offers[0] ?? [];
         }
 
         $price = $offers['price'] ?? $offers['lowPrice'] ?? null;
 
         if ($price === null) {
-            throw new Exception("Price not found in offers data");
+            throw new Exception('Price not found in offers data');
         }
 
         // Convert to float and keep original currency
@@ -316,9 +301,6 @@ class ProductImportService
 
     /**
      * Extract image URLs from product data
-     *
-     * @param array $jsonLdData
-     * @return array
      */
     private function extractImages(array $jsonLdData): array
     {

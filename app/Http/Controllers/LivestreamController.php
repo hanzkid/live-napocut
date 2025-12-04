@@ -76,7 +76,7 @@ class LivestreamController extends Controller
             's3_path' => $streamData['s3_path'],
         ]);
 
-        if (!empty($validated['product_ids'])) {
+        if (! empty($validated['product_ids'])) {
             $livestream->products()->sync($validated['product_ids']);
         }
 

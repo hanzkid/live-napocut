@@ -29,11 +29,11 @@ class FrontController extends Controller
 
         $hlsUrl = null;
         if ($activeStream && $activeStream->s3_path) {
-            $hlsUrl = config('livekit.s3_public_url') . '/' . $activeStream->s3_path;
+            $hlsUrl = config('livekit.s3_public_url').'/'.$activeStream->s3_path;
         }
 
         // Generate guest token if user doesn't have one and stream is active
-        if (!$token && $activeStream) {
+        if (! $token && $activeStream) {
             $roomName = $activeStream->title;
 
             // Use provided name from request (localStorage) or generate guest name
@@ -41,7 +41,7 @@ class FrontController extends Controller
             if ($name) {
                 $guestName = $name;
             } else {
-                $guestName = 'Guest_' . rand(1000, 9999);
+                $guestName = 'Guest_'.rand(1000, 9999);
             }
 
             $tokenOptions = (new \Agence104\LiveKit\AccessTokenOptions)
@@ -72,7 +72,7 @@ class FrontController extends Controller
                     'link' => $product->link,
                     'category' => $product->category?->name,
                     'image' => $product->images->first()?->url,
-                    'images' => $product->images->map(fn($img) => $img->url)->toArray(),
+                    'images' => $product->images->map(fn ($img) => $img->url)->toArray(),
                 ];
             })->toArray();
         }
@@ -118,7 +118,7 @@ class FrontController extends Controller
             ->latest()
             ->first();
 
-        if (!$activeStream) {
+        if (! $activeStream) {
             return back()->withErrors([
                 'name' => 'No active livestream available at the moment.',
             ]);
@@ -165,7 +165,7 @@ class FrontController extends Controller
             ->get();
 
         // Generate guest token if user doesn't have one and stream is active
-        if (!$token && $activeStream) {
+        if (! $token && $activeStream) {
             $roomName = $activeStream->title;
 
             // Use provided name from request (localStorage) or generate guest name
@@ -173,7 +173,7 @@ class FrontController extends Controller
             if ($name) {
                 $guestName = $name;
             } else {
-                $guestName = 'Guest_' . rand(1000, 9999);
+                $guestName = 'Guest_'.rand(1000, 9999);
             }
 
             $tokenOptions = (new \Agence104\LiveKit\AccessTokenOptions)
@@ -204,7 +204,7 @@ class FrontController extends Controller
                     'link' => $product->link,
                     'category' => $product->category?->name,
                     'image' => $product->images->first()?->url,
-                    'images' => $product->images->map(fn($img) => $img->url)->toArray(),
+                    'images' => $product->images->map(fn ($img) => $img->url)->toArray(),
                 ];
             })->toArray();
         }
@@ -249,7 +249,7 @@ class FrontController extends Controller
             ->latest()
             ->first();
 
-        if (!$activeStream) {
+        if (! $activeStream) {
             return back()->withErrors([
                 'name' => 'No active livestream available at the moment.',
             ]);

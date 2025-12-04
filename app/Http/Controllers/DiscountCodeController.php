@@ -51,7 +51,7 @@ class DiscountCodeController extends Controller
     public function update(Request $request, DiscountCode $discountCode): RedirectResponse
     {
         $validated = $request->validate([
-            'discount_code' => ['required', 'string', 'max:255', 'unique:discount_codes,discount_code,' . $discountCode->id],
+            'discount_code' => ['required', 'string', 'max:255', 'unique:discount_codes,discount_code,'.$discountCode->id],
             'description' => ['nullable', 'string'],
             'valid_start_date' => ['nullable', 'date'],
             'valid_end_date' => ['nullable', 'date', 'after_or_equal:valid_start_date'],

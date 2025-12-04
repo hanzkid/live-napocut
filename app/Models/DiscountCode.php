@@ -24,15 +24,15 @@ class DiscountCode extends Model
     public function isValid(): bool
     {
         $now = now();
-        
+
         if ($this->valid_start_date && $now->lt($this->valid_start_date)) {
             return false;
         }
-        
+
         if ($this->valid_end_date && $now->gt($this->valid_end_date)) {
             return false;
         }
-        
+
         return true;
     }
 }

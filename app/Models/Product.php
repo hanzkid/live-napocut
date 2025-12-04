@@ -30,14 +30,14 @@ class Product extends Model
     protected function formattedPrice(): Attribute
     {
         return Attribute::make(
-            get: fn() => Number::currency($this->price, 'IDR', 'id'),
+            get: fn () => Number::currency($this->price, 'IDR', 'id'),
         );
     }
 
     protected function plainPrice(): Attribute
     {
         return Attribute::make(
-            get: fn(): string => "Rp. " . number_format((float) $this->price, 0, ',', '.'),
+            get: fn (): string => 'Rp. '.number_format((float) $this->price, 0, ',', '.'),
         );
     }
 

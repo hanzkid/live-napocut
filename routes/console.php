@@ -16,10 +16,10 @@ Artisan::command('inspire', function () {
 Artisan::command('products:import {--limit=50 : Number of products to fetch} {--offset=0 : Offset for pagination}', function () {
     $limit = (int) $this->option('limit');
     $offset = (int) $this->option('offset');
-    
+
     $baseUrl = 'https://api.plugo.world/v1/shop/5812/products?search&available=false&sort=sold_out,-sort,-id';
     $apiUrl = $baseUrl.'&limit='.$limit.'&offset='.$offset;
-    
+
     $this->info('Fetching product list from Plugo API...');
     $this->info('Limit: '.$limit.', Offset: '.$offset);
     $this->info('API URL: '.$apiUrl);
@@ -28,6 +28,7 @@ Artisan::command('products:import {--limit=50 : Number of products to fetch} {--
 
     if (! $response->successful()) {
         $this->error('Failed to fetch products list. HTTP status: '.$response->status());
+
         return;
     }
 
@@ -35,6 +36,7 @@ Artisan::command('products:import {--limit=50 : Number of products to fetch} {--
 
     if (empty($datas)) {
         $this->warn('No products returned from API.');
+
         return;
     }
 
@@ -44,6 +46,7 @@ Artisan::command('products:import {--limit=50 : Number of products to fetch} {--
     foreach ($datas as $data) {
         if (! isset($data['id'])) {
             $this->warn('Skipping item without id.');
+
             continue;
         }
 
@@ -87,7 +90,7 @@ Artisan::command('products:import {--limit=50 : Number of products to fetch} {--
 
             $logPath = storage_path('logs/failed.csv');
             $line = sprintf(
-                "\"%s\",\"%s\",\"%s\",\"%s\"%s",
+                '"%s","%s","%s","%s"%s',
                 now()->toDateTimeString(),
                 $data['id'],
                 $url,
@@ -106,6 +109,7 @@ Artisan::command('products:import-from-failed-csv {path? : Path to failed CSV fi
 
     if (! file_exists($path)) {
         $this->error('Failed CSV file not found at: '.$path);
+
         return;
     }
 
@@ -116,6 +120,7 @@ Artisan::command('products:import-from-failed-csv {path? : Path to failed CSV fi
 
     if (($handle = fopen($path, 'r')) === false) {
         $this->error('Unable to open failed CSV file.');
+
         return;
     }
 
@@ -126,6 +131,7 @@ Artisan::command('products:import-from-failed-csv {path? : Path to failed CSV fi
         // Expecting: [timestamp, product_id, url, error_message]
         if (count($data) < 3) {
             $this->warn("Skipping row {$row}: invalid format");
+
             continue;
         }
 
@@ -135,6 +141,7 @@ Artisan::command('products:import-from-failed-csv {path? : Path to failed CSV fi
 
         if (! $url) {
             $this->warn("Skipping row {$row}: missing URL");
+
             continue;
         }
 
@@ -182,4 +189,3 @@ Artisan::command('products:import-from-failed-csv {path? : Path to failed CSV fi
 
     fclose($handle);
 })->purpose('Import products again based on entries from failed.csv');
-
