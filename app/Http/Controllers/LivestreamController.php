@@ -19,6 +19,8 @@ class LivestreamController extends Controller
             'ws_url',
             'stream_key',
             'is_active',
+            'started_at',
+            'ended_at',
             'created_at',
         ])->with('products.images')->latest()->get();
 
@@ -39,6 +41,8 @@ class LivestreamController extends Controller
             'ingress_id' => $livestream->ingress_id,
             's3_path' => $livestream->s3_path,
             'is_active' => $livestream->is_active,
+            'started_at' => $livestream->started_at,
+            'ended_at' => $livestream->ended_at,
             'created_at' => $livestream->created_at,
             'updated_at' => $livestream->updated_at,
             'products' => $livestream->products->map(function ($product) {

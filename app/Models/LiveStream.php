@@ -13,6 +13,8 @@ class LiveStream extends Model
         'ingress_id',
         's3_path',
         'is_active',
+        'started_at',
+        'ended_at',
     ];
 
     public function products()

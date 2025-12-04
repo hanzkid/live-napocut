@@ -37,6 +37,8 @@ type LivestreamRecord = {
     title: string | null;
     ws_url: string | null;
     stream_key: string | null;
+    started_at: string | null;
+    ended_at: string | null;
     created_at: string;
     updated_at: string;
 };
@@ -121,6 +123,33 @@ const columns: ColumnDef<LivestreamRecord>[] = [
         cell: ({ row }) => (
             <span className="text-sm text-muted-foreground">{formatDateTime(row.original.created_at)}</span>
         ),
+        enableSorting: true,
+    },
+    {
+        accessorKey: 'started_at',
+        header: () => <span className="text-sm font-semibold">Stream Status</span>,
+        cell: ({ row }) => {
+            const { started_at, ended_at, is_active } = row.original;
+            if (is_active && started_at) {
+                return (
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium text-green-600 dark:text-green-400">Active</span>
+                        <span className="text-xs text-muted-foreground">Started: {formatDateTime(started_at)}</span>
+                    </div>
+                );
+            }
+            if (ended_at && started_at) {
+                return (
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium text-muted-foreground">Ended</span>
+                        <span className="text-xs text-muted-foreground">
+                            {formatDateTime(started_at)} - {formatDateTime(ended_at)}
+                        </span>
+                    </div>
+                );
+            }
+            return <span className="text-sm text-muted-foreground">—</span>;
+        },
         enableSorting: true,
     },
 ];

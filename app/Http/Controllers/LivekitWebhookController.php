@@ -64,7 +64,10 @@ class LivekitWebhookController extends Controller
         $livestream = LiveStream::where('ingress_id', $ingressId)->first();
 
         if ($livestream) {
-            $livestream->update(['is_active' => true]);
+            $livestream->update([
+                'is_active' => true,
+                'started_at' => now(),
+            ]);
         }
     }
 
@@ -79,7 +82,10 @@ class LivekitWebhookController extends Controller
         $livestream = LiveStream::where('ingress_id', $ingressId)->first();
 
         if ($livestream) {
-            $livestream->update(['is_active' => false]);
+            $livestream->update([
+                'is_active' => false,
+                'ended_at' => now(),
+            ]);
         }
     }
 }

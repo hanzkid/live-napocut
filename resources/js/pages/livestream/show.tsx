@@ -16,6 +16,8 @@ type LivestreamData = {
     ingress_id: string;
     s3_path: string;
     is_active: boolean;
+    started_at: string | null;
+    ended_at: string | null;
     created_at: string;
     updated_at: string;
 };
@@ -142,6 +144,22 @@ export default function LivestreamShow({ livestream }: LivestreamShowProps) {
                                 <label className="text-sm font-medium">Last Updated</label>
                                 <div className="text-sm text-muted-foreground">
                                     {formatDateTime(livestream.updated_at)}
+                                </div>
+                            </div>
+
+                            {/* Started At */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Started At</label>
+                                <div className="text-sm text-muted-foreground">
+                                    {livestream.started_at ? formatDateTime(livestream.started_at) : '—'}
+                                </div>
+                            </div>
+
+                            {/* Ended At */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Ended At</label>
+                                <div className="text-sm text-muted-foreground">
+                                    {livestream.ended_at ? formatDateTime(livestream.ended_at) : '—'}
                                 </div>
                             </div>
                         </div>
