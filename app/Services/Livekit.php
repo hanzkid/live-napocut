@@ -34,11 +34,12 @@ class Livekit
         ]);
 
         // Configure HLS segmented output for livestreaming (live only, no VOD recording)
-        $s3Path = $roomName.'-'.Str::random(8).'/';
+        // Using 1-second segments for lower latency (LL-HLS approach)
+        $s3Path = $roomName . '-' . Str::random(8) . '/';
         $segmentedOutput = new SegmentedFileOutput([
             'filename_prefix' => $s3Path,
             'live_playlist_name' => 'live.m3u8',
-            'segment_duration' => 3,
+            'segment_duration' => 3, // Reduced from 3s to 1s for lower latency
             'protocol' => SegmentedFileProtocol::HLS_PROTOCOL,
         ]);
         $segmentedOutput->setS3($s3);
@@ -79,7 +80,7 @@ class Livekit
             'ws_url' => $ingress->getUrl(),
             'stream_key' => $ingress->getStreamKey(),
             'ingress_id' => $ingress->getIngressId(),
-            's3_path' => $s3Path.'live.m3u8',
+            's3_path' => $s3Path . 'live.m3u8',
         ];
     }
 }
