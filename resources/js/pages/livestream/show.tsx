@@ -64,7 +64,7 @@ export default function LivestreamShow({ livestream }: LivestreamShowProps) {
                     <div>
                         <h1 className="text-2xl font-semibold tracking-tight">{livestream.title}</h1>
                         <p className="text-muted-foreground">
-                            Manage your livestream details and attached products.
+                            Manage your livestream details.
                         </p>
                     </div>
                     <Badge variant={livestream.is_active ? 'default' : 'secondary'} className="w-fit">
