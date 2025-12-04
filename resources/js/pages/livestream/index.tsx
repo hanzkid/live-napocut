@@ -37,6 +37,7 @@ type LivestreamRecord = {
     title: string | null;
     ws_url: string | null;
     stream_key: string | null;
+    is_active: boolean;
     started_at: string | null;
     ended_at: string | null;
     created_at: string;
@@ -130,6 +131,7 @@ const columns: ColumnDef<LivestreamRecord>[] = [
         header: () => <span className="text-sm font-semibold">Stream Status</span>,
         cell: ({ row }) => {
             const { started_at, ended_at, is_active } = row.original;
+            
             if (is_active && started_at) {
                 return (
                     <div className="flex flex-col">
@@ -138,6 +140,7 @@ const columns: ColumnDef<LivestreamRecord>[] = [
                     </div>
                 );
             }
+            
             if (ended_at && started_at) {
                 return (
                     <div className="flex flex-col">
@@ -148,7 +151,17 @@ const columns: ColumnDef<LivestreamRecord>[] = [
                     </div>
                 );
             }
-            return <span className="text-sm text-muted-foreground">—</span>;
+            
+            if (started_at && !is_active && !ended_at) {
+                return (
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Inactive</span>
+                        <span className="text-xs text-muted-foreground">Started: {formatDateTime(started_at)}</span>
+                    </div>
+                );
+            }
+            
+            return <span className="text-sm text-muted-foreground">Not started</span>;
         },
         enableSorting: true,
     },
@@ -182,6 +195,16 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
             setIsSuccessDialogOpen(true);
         }
     }, [page.props.flash?.createdStream]);
+
+    // Auto-open modal if ?create=true is in URL
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('create') === 'true') {
+            setIsDialogOpen(true);
+            // Clean up URL without reloading
+            window.history.replaceState({}, '', '/livestream');
+        }
+    }, []);
 
     const table = useReactTable({
         data: rows,

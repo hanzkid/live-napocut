@@ -82,6 +82,16 @@ export default function DiscountCodesIndex({ discountCodes = [] }: DiscountCodes
         setRows(discountCodes);
     }, [discountCodes]);
 
+    // Auto-open modal if ?create=true is in URL
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('create') === 'true') {
+            setIsDialogOpen(true);
+            // Clean up URL without reloading
+            window.history.replaceState({}, '', '/discount-codes');
+        }
+    }, []);
+
     const formatDateTime = (dateString: string | null) => {
         if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleString();

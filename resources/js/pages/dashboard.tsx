@@ -157,7 +157,7 @@ export default function Dashboard({ stats, recentLivestreams, activeDiscountCode
                                     No active discount codes
                                 </p>
                                 <Link
-                                    href="/discount-codes"
+                                    href="/discount-codes?create=true"
                                     className="mt-2 text-sm text-blue-600 hover:underline dark:text-blue-400"
                                 >
                                     Create discount code →
@@ -206,12 +206,20 @@ export default function Dashboard({ stats, recentLivestreams, activeDiscountCode
                         )}
                         {activeDiscountCodes.length > 0 && (
                             <div className="mt-4 pt-4 border-t border-sidebar-border/70 dark:border-sidebar-border">
-                                <Link
-                                    href="/discount-codes"
-                                    className="text-sm text-blue-600 hover:underline dark:text-blue-400"
-                                >
-                                    View all discount codes →
-                                </Link>
+                                <div className="flex items-center justify-between">
+                                    <Link
+                                        href="/discount-codes"
+                                        className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                                    >
+                                        View all discount codes →
+                                    </Link>
+                                    <Link
+                                        href="/discount-codes?create=true"
+                                        className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                                    >
+                                        Create new code →
+                                    </Link>
+                                </div>
                             </div>
                         )}
                     </div>
