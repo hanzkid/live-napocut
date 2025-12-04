@@ -133,6 +133,15 @@ const Index = (props: {
           connect={true}
           className="relative w-full h-full"
         >
+          {/* Livestream Title */}
+          {props.room_name && (
+            <div className="absolute top-4 left-0 right-0 z-30 flex justify-center">
+              <h1 className="text-lg font-semibold text-white text-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                {props.room_name}
+              </h1>
+            </div>
+          )}
+
           {/* Video Player */}
           <VideoPlayer hlsUrl={props.hls_url} />
 
