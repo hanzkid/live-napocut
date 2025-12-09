@@ -124,7 +124,7 @@ const Index = (props: {
     event.preventDefault();
 
     if (!viewerName.trim()) {
-      setNameError("Please enter your name to continue.");
+      setNameError("Masukkan nama kamu dulu untuk lanjut.");
       return;
     }
 
@@ -240,12 +240,12 @@ const Index = (props: {
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-white mb-2">
-              {streamEnded ? "Livestream Has Ended" : "No Active Stream"}
+              {streamEnded ? "Live Shopping Sudah Berakhir" : "Belum Ada Live Saat Ini"}
             </h2>
             <p className="text-white/60">
               {streamEnded
-                ? "The livestream has ended. Thank you for watching!"
-                : "There is no livestream currently active. Please check back later."}
+                ? "Live shopping sudah selesai, terima kasih sudah menonton!"
+                : "Belum ada live shopping sekarang. Coba cek lagi nanti, ya!"}
             </p>
           </div>
         </div>
@@ -255,17 +255,17 @@ const Index = (props: {
         <Dialog open={showNameDialog} onOpenChange={setShowNameDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Set your display name</DialogTitle>
+              <DialogTitle>Masukkan Nama Kamu</DialogTitle>
               <DialogDescription>
-                Enter your name to participate in the chat and interact with others.
+                Masukkan nama kamu untuk ikutan chat dan belanja bareng.
               </DialogDescription>
             </DialogHeader>
             <form className="space-y-4" onSubmit={handleNameSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="viewer-name">Name</Label>
+                <Label htmlFor="viewer-name">Nama</Label>
                 <Input
                   id="viewer-name"
-                  placeholder="Alex Kim"
+                  placeholder="Budi Santoso"
                   value={viewerName}
                   onChange={(event) => setViewerName(event.target.value)}
                   aria-invalid={Boolean(nameError)}
@@ -278,11 +278,11 @@ const Index = (props: {
               </div>
               <DialogFooter className="flex-col gap-2">
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Joining…" : "Join chat"}
+                  {isSubmitting ? "Sedang bergabung…" : "Gabung Chat"}
                 </Button>
                 {isSubmitting && (
                   <p className="text-sm text-muted-foreground text-center">
-                    Setting up your chat access...
+                    Menyiapkan chat kamu...
                   </p>
                 )}
               </DialogFooter>
