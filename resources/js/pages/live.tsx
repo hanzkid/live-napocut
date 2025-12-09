@@ -24,6 +24,8 @@ import { Product, ChatMessage } from "@/types/livestream";
 type DiscountCode = {
   code: string;
   description: string | null;
+  valid_start_date: string | null;
+  valid_end_date: string | null;
 };
 
 const Index = (props: {
@@ -43,7 +45,33 @@ const Index = (props: {
   const [nameError, setNameError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNameDialog, setShowNameDialog] = useState(false);
+  const [validDiscountCodes, setValidDiscountCodes] = useState<DiscountCode[]>([]);
 
+
+  // Initialize discount codes from props
+  useEffect(() => {
+    if (props.discountCodes) {
+      setValidDiscountCodes(props.discountCodes);
+    }
+  }, [props.discountCodes]);
+
+  // Set up Laravel Echo connection for real-time discount code updates
+  useEffect(() => {
+    if (!props.is_active || !window.Echo) {
+      return;
+    }
+
+    const channel = window.Echo.channel('discount-codes');
+
+    channel.listen('.updated', (data: { discountCodes: DiscountCode[] }) => {
+      setValidDiscountCodes(data.discountCodes);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      window.Echo.leave('discount-codes');
+    };
+  }, [props.is_active]);
 
   // Check localStorage for saved name and auto-submit if user is guest
   useEffect(() => {
@@ -170,7 +198,7 @@ const Index = (props: {
           {/* Product Drawer */}
           <ProductDrawer
             products={props.products}
-            discountCodes={props.discountCodes}
+            discountCodes={validDiscountCodes}
             onProductClick={handleProductClick}
             open={drawerOpen}
             onOpenChange={setDrawerOpen}

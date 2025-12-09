@@ -77,20 +77,30 @@ class FrontController extends Controller
             })->toArray();
         }
 
-        // Fetch valid discount codes
-        $discountCodes = DiscountCode::where(function ($query) {
-            $query->whereNull('valid_start_date')
-                ->orWhere('valid_start_date', '<=', now());
+        // Fetch discount codes valid within next 24 hours
+        $now = now();
+        $twentyFourHoursLater = $now->copy()->addHours(24);
+        
+        $discountCodes = DiscountCode::where(function ($query) use ($now, $twentyFourHoursLater) {
+            // Codes that start within 24 hours or have already started
+            $query->where(function ($q) use ($now, $twentyFourHoursLater) {
+                $q->whereNull('valid_start_date')
+                    ->orWhereBetween('valid_start_date', [$now, $twentyFourHoursLater])
+                    ->orWhere('valid_start_date', '<=', $now);
+            });
         })
-            ->where(function ($query) {
+            ->where(function ($query) use ($now) {
+                // Codes that haven't expired yet (or have no end date)
                 $query->whereNull('valid_end_date')
-                    ->orWhere('valid_end_date', '>=', now());
+                    ->orWhere('valid_end_date', '>=', $now);
             })
             ->get()
             ->map(function ($code) {
                 return [
                     'code' => $code->discount_code,
                     'description' => $code->description,
+                    'valid_start_date' => $code->valid_start_date?->toIso8601String(),
+                    'valid_end_date' => $code->valid_end_date?->toIso8601String(),
                 ];
             })
             ->toArray();
@@ -108,137 +118,6 @@ class FrontController extends Controller
     }
 
     public function joinLivestream(Request $request)
-    {
-        $livekit = config('livekit');
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-        ]);
-
-        $activeStream = LiveStream::where('is_active', true)
-            ->latest()
-            ->first();
-
-        if (! $activeStream) {
-            return back()->withErrors([
-                'name' => 'No active livestream available at the moment.',
-            ]);
-        }
-
-        $roomName = $activeStream->title;
-        $newName = $request->input('name');
-
-        // Generate new token with the new name
-        $tokenOptions = (new AccessTokenOptions)
-            ->setIdentity($newName);
-
-        $videoGrant = (new VideoGrant)
-            ->setRoomJoin()
-            ->setRoomName($roomName);
-
-        $token = (new AccessToken($livekit['api_key'], $livekit['api_secret']))
-            ->init($tokenOptions)
-            ->setGrant($videoGrant)
-            ->toJwt();
-
-        session(['livekit_token' => $token, 'is_guest' => false]);
-
-        // Return success without page reload
-        return back();
-    }
-
-    public function webrtc(Request $request)
-    {
-        // secret key to protect the page
-        $secretKey = $request->get('key');
-        if ($secretKey != '220715') {
-            return abort(404);
-        }
-        $livekit = config('livekit');
-        $token = session('livekit_token');
-
-        $activeStream = LiveStream::where('is_active', true)
-            ->latest()
-            ->first();
-
-        $rawProducts = Product::where('is_show', true)
-            ->with(['images', 'category'])
-            ->get();
-
-        // Generate guest token if user doesn't have one and stream is active
-        if (! $token && $activeStream) {
-            $roomName = $activeStream->title;
-
-            // Use provided name from request (localStorage) or generate guest name
-            $name = $request->input('name');
-            if ($name) {
-                $guestName = $name;
-            } else {
-                $guestName = 'Guest_'.rand(1000, 9999);
-            }
-
-            $tokenOptions = (new \Agence104\LiveKit\AccessTokenOptions)
-                ->setIdentity($guestName);
-
-            $videoGrant = (new \Agence104\LiveKit\VideoGrant)
-                ->setRoomJoin()
-                ->setRoomName($roomName);
-
-            $token = (new \Agence104\LiveKit\AccessToken($livekit['api_key'], $livekit['api_secret']))
-                ->init($tokenOptions)
-                ->setGrant($videoGrant)
-                ->toJwt();
-
-            session(['livekit_token' => $token, 'is_guest' => true]);
-        }
-
-        $products = [];
-        if ($activeStream) {
-            $products = $rawProducts->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'formatted_price' => $product->formatted_price,
-                    'plain_price' => $product->plain_price,
-                    'description' => $product->description,
-                    'link' => $product->link,
-                    'category' => $product->category?->name,
-                    'image' => $product->images->first()?->url,
-                    'images' => $product->images->map(fn ($img) => $img->url)->toArray(),
-                ];
-            })->toArray();
-        }
-
-        // Fetch valid discount codes
-        $discountCodes = DiscountCode::where(function ($query) {
-            $query->whereNull('valid_start_date')
-                ->orWhere('valid_start_date', '<=', now());
-        })
-            ->where(function ($query) {
-                $query->whereNull('valid_end_date')
-                    ->orWhere('valid_end_date', '>=', now());
-            })
-            ->get()
-            ->map(function ($code) {
-                return [
-                    'code' => $code->discount_code,
-                    'description' => $code->description,
-                ];
-            })
-            ->toArray();
-
-        return Inertia::render('webrtc', [
-            'livekit_ws_url' => $livekit['ws_url'],
-            'livekit_token' => $token,
-            'room_name' => $activeStream?->title,
-            'is_active' => $activeStream?->is_active ?? false,
-            'is_guest' => session('is_guest', false),
-            'products' => $products,
-            'discountCodes' => $discountCodes,
-        ]);
-    }
-
-    public function joinWebrtc(Request $request)
     {
         $livekit = config('livekit');
         $request->validate([

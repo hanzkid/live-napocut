@@ -13,6 +13,8 @@ import { Search, Copy, Check } from "lucide-react";
 interface DiscountCode {
     code: string;
     description: string | null;
+    valid_start_date: string | null;
+    valid_end_date: string | null;
 }
 
 interface ProductDrawerProps {
