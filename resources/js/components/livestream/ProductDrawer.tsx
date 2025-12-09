@@ -109,51 +109,51 @@ export const ProductDrawer = ({
 
     return (
         <Drawer open={open} onOpenChange={onOpenChange}>
-            <DrawerContent className="!max-h-[70vh] flex flex-col">
-                <DrawerHeader className="flex-shrink-0 pb-3 px-4">
+            <DrawerContent className="!max-h-[55vh] flex flex-col">
+                <DrawerHeader className="flex-shrink-0 pb-2 px-3">
                     <DrawerTitle className="sr-only">Products</DrawerTitle>
                     <DrawerDescription className="sr-only">
                         Browse and select products to view details
                     </DrawerDescription>
                     {/* Search Input */}
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                         <Input
                             type="text"
                             placeholder="Search products..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9"
+                            className="pl-8 h-9 text-sm"
                         />
                     </div>
                 </DrawerHeader>
 
                 {/* Discount Code Cards */}
                 {discountCodes.length > 0 && (
-                    <div className="px-4 pb-3 flex-shrink-0">
-                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="px-3 pb-2 flex-shrink-0">
+                        <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-hide">
                             {discountCodes.map((discount) => (
                                 <div
                                     key={discount.code}
                                     className="flex-shrink-0 cursor-pointer group"
                                     onClick={() => handleCopyCode(discount.code)}
                                 >
-                                    <div className="relative bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-lg px-3 py-2 hover:shadow-lg transition-all">
-                                        <div className="flex items-center gap-2">
+                                    <div className="relative bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-lg px-2.5 py-1.5 hover:shadow-lg transition-all">
+                                        <div className="flex items-center gap-1.5">
                                             <div className="flex-1">
-                                                <span className="font-mono font-bold text-sm block mb-0.5">
+                                                <span className="font-mono font-bold text-xs block mb-0.5">
                                                     {discount.code}
                                                 </span>
                                                 <p
-                                                    className="text-[10px] opacity-90"
+                                                    className="text-[9px] opacity-90"
                                                     dangerouslySetInnerHTML={{ __html: discount.description || '' }}
                                                 />
                                             </div>
-                                            <div className="flex-shrink-0 bg-white/20 rounded p-1">
+                                            <div className="flex-shrink-0 bg-white/20 rounded p-0.5">
                                                 {copiedCode === discount.code ? (
-                                                    <Check className="h-3 w-3" />
+                                                    <Check className="h-2.5 w-2.5" />
                                                 ) : (
-                                                    <Copy className="h-3 w-3" />
+                                                    <Copy className="h-2.5 w-2.5" />
                                                 )}
                                             </div>
                                         </div>
@@ -164,15 +164,15 @@ export const ProductDrawer = ({
                     </div>
                 )}
 
-                {/* Category Filter Badges */}
+                {/* Category Filters */}
                 {categories.length > 1 && (
-                    <div className="px-4 pb-2 flex-shrink-0">
-                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="px-3 pb-1.5 flex-shrink-0">
+                        <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-hide">
                             {categories.map((category) => (
                                 <Badge
                                     key={category}
                                     variant={selectedCategory === category ? "default" : "outline"}
-                                    className="cursor-pointer hover:bg-primary/90 transition-colors"
+                                    className="cursor-pointer hover:bg-primary/90 transition-colors text-xs px-2 py-0.5"
                                     onClick={() => setSelectedCategory(category)}
                                 >
                                     {category}
@@ -184,26 +184,27 @@ export const ProductDrawer = ({
 
                 <div
                     ref={scrollContainerRef}
-                    className="overflow-y-auto pt-2 px-4 space-y-3 flex-1"
+                    className="overflow-y-auto pt-1.5 px-3 space-y-2 flex-1"
                     onScroll={handleScroll}
                 >
                     {visibleProducts.map((product) => (
                         <div
                             key={product.id}
-                            className="flex items-center gap-3 cursor-pointer group rounded-lg hover:bg-accent transition-colors"
+                            className="flex items-center gap-2 cursor-pointer group rounded-lg hover:bg-accent transition-colors p-1"
                             onClick={() => onProductClick(product)}
                         >
-                            <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-white">
+                            <div className="relative w-12 h-12 flex-shrink-0 rounded-md overflow-hidden bg-white">
                                 <img
                                     src={product.image}
                                     alt={product.name}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                                 />
                             </div>
-
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{product.name}</p>
-                                <p className="text-base font-bold">
+                                <h3 className="font-medium text-xs line-clamp-2 mb-0.5">
+                                    {product.name}
+                                </h3>
+                                <p className="text-xs font-semibold text-primary">
                                     {product.plain_price}
                                 </p>
                             </div>
