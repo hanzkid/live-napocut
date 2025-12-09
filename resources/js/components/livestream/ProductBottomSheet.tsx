@@ -5,6 +5,7 @@ import {
     DrawerContent,
     DrawerHeader,
     DrawerTitle,
+    DrawerDescription,
     DrawerClose,
 } from "@/components/ui/drawer";
 import { Product } from "@/types/livestream";
@@ -32,6 +33,9 @@ export const ProductBottomSheet = ({
             <DrawerContent className="!max-h-[85vh] flex flex-col">
                 <DrawerHeader className="flex-shrink-0 relative">
                     <DrawerTitle className="text-left pr-8">{product.name}</DrawerTitle>
+                    <DrawerDescription className="sr-only">
+                        Product details and images
+                    </DrawerDescription>
                     <DrawerClose asChild>
                         <Button
                             variant="ghost"
@@ -62,8 +66,8 @@ export const ProductBottomSheet = ({
                                         key={index}
                                         onClick={() => setCurrentImageIndex(index)}
                                         className={`w-2 h-2 rounded-full transition-all ${index === currentImageIndex
-                                                ? "bg-white w-6"
-                                                : "bg-white/50"
+                                            ? "bg-white w-6"
+                                            : "bg-white/50"
                                             }`}
                                     />
                                 ))}

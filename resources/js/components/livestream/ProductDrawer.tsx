@@ -2,6 +2,8 @@ import {
     Drawer,
     DrawerContent,
     DrawerHeader,
+    DrawerTitle,
+    DrawerDescription,
 } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -109,6 +111,10 @@ export const ProductDrawer = ({
         <Drawer open={open} onOpenChange={onOpenChange}>
             <DrawerContent className="!max-h-[70vh] flex flex-col">
                 <DrawerHeader className="flex-shrink-0 pb-3 px-4">
+                    <DrawerTitle className="sr-only">Products</DrawerTitle>
+                    <DrawerDescription className="sr-only">
+                        Browse and select products to view details
+                    </DrawerDescription>
                     {/* Search Input */}
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -138,7 +144,7 @@ export const ProductDrawer = ({
                                                 <span className="font-mono font-bold text-sm block mb-0.5">
                                                     {discount.code}
                                                 </span>
-                                                <p 
+                                                <p
                                                     className="text-[10px] opacity-90"
                                                     dangerouslySetInnerHTML={{ __html: discount.description || '' }}
                                                 />
