@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/livestream/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { index as productsIndexRoute, create as productsCreateRoute, edit as productsEditRoute, destroy as productsDestroyRoute, importFromUrl as productsImportFromUrlRoute, toggleVisibility as productsToggleVisibilityRoute, show as productsShowRoute } from '@/routes/products';
+import { index as productsIndexRoute, create as productsCreateRoute, edit as productsEditRoute, destroy as productsDestroyRoute, importFromUrl as productsImportFromUrlRoute, toggleVisibility as productsToggleVisibilityRoute, toggleAllVisibility as productsToggleAllVisibilityRoute, toggleSelectedVisibility as productsToggleSelectedVisibilityRoute, show as productsShowRoute } from '@/routes/products';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, Link } from '@inertiajs/react';
 import {
@@ -83,12 +83,64 @@ export default function ProductsIndex({ products = [], categories = [] }: Produc
     const [togglingVisibilityIds, setTogglingVisibilityIds] = useState<number[]>([]);
     const [importUrl, setImportUrl] = useState('');
     const [isImporting, setIsImporting] = useState(false);
+    const [isBulkToggling, setIsBulkToggling] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
     useEffect(() => {
         setRows(products);
+        // Clear selection when products change
+        setSelectedIds([]);
     }, [products]);
 
+    const handleSelectRow = (id: number, checked: boolean) => {
+        if (checked) {
+            setSelectedIds(prev => [...prev, id]);
+        } else {
+            setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+        }
+    };
+
     const columns: ColumnDef<ProductRecord>[] = [
+        {
+            id: 'select',
+            header: ({ table }) => {
+                // Get currently visible row IDs from the table
+                const visibleRowIds = table.getRowModel().rows.map(row => row.original.id);
+                const allVisibleSelected = visibleRowIds.length > 0 && visibleRowIds.every(id => selectedIds.includes(id));
+
+                return (
+                    <div className="flex items-center">
+                        <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300"
+                            checked={allVisibleSelected}
+                            onChange={(e) => {
+                                if (e.target.checked) {
+                                    // Add visible row IDs to selection (avoid duplicates)
+                                    setSelectedIds(prev => {
+                                        const newIds = visibleRowIds.filter(id => !prev.includes(id));
+                                        return [...prev, ...newIds];
+                                    });
+                                } else {
+                                    // Remove visible row IDs from selection
+                                    setSelectedIds(prev => prev.filter(id => !visibleRowIds.includes(id)));
+                                }
+                            }}
+                        />
+                    </div>
+                );
+            },
+            cell: ({ row }) => (
+                <div className="flex items-center">
+                    <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300"
+                        checked={selectedIds.includes(row.original.id)}
+                        onChange={(e) => handleSelectRow(row.original.id, e.target.checked)}
+                    />
+                </div>
+            ),
+        },
         {
             accessorKey: 'name',
             header: () => <span className="text-sm font-semibold">Product</span>,
@@ -317,6 +369,54 @@ export default function ProductsIndex({ products = [], categories = [] }: Produc
         });
     };
 
+    const handleBulkToggle = (visible: boolean) => {
+        setIsBulkToggling(true);
+
+        router.patch(
+            productsToggleAllVisibilityRoute().url,
+            { visible },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(visible ? 'All products are now visible' : 'All products are now hidden');
+                },
+                onError: () => {
+                    toast.error('Failed to update product visibility');
+                },
+                onFinish: () => {
+                    setIsBulkToggling(false);
+                },
+            }
+        );
+    };
+
+    const handleSelectedToggle = (visible: boolean) => {
+        if (selectedIds.length === 0) {
+            toast.error('Please select at least one product');
+            return;
+        }
+
+        setIsBulkToggling(true);
+
+        router.patch(
+            productsToggleSelectedVisibilityRoute().url,
+            { visible, product_ids: selectedIds },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(visible ? `${selectedIds.length} product(s) are now visible` : `${selectedIds.length} product(s) are now hidden`);
+                    setSelectedIds([]);
+                },
+                onError: () => {
+                    toast.error('Failed to update product visibility');
+                },
+                onFinish: () => {
+                    setIsBulkToggling(false);
+                },
+            }
+        );
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Products" />
@@ -339,7 +439,40 @@ export default function ProductsIndex({ products = [], categories = [] }: Produc
                                     table.getColumn('name')?.setFilterValue(event.target.value)
                                 }
                             />
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleBulkToggle(true)}
+                                    disabled={isBulkToggling}
+                                >
+                                    {isBulkToggling ? <Spinner className="h-4 w-4" /> : 'Show All'}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleBulkToggle(false)}
+                                    disabled={isBulkToggling}
+                                >
+                                    {isBulkToggling ? <Spinner className="h-4 w-4" /> : 'Hide All'}
+                                </Button>
+                                <div className="w-px h-6 bg-border" />
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleSelectedToggle(true)}
+                                    disabled={isBulkToggling || selectedIds.length === 0}
+                                >
+                                    {isBulkToggling ? <Spinner className="h-4 w-4" /> : `Show Selected${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}`}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleSelectedToggle(false)}
+                                    disabled={isBulkToggling || selectedIds.length === 0}
+                                >
+                                    {isBulkToggling ? <Spinner className="h-4 w-4" /> : `Hide Selected${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}`}
+                                </Button>
                                 <Button variant="outline" className="w-full sm:w-auto" onClick={handleImportFromUrl}>
                                     <LinkIcon className="size-4" />
                                     Create from Link
@@ -386,10 +519,10 @@ export default function ProductsIndex({ products = [], categories = [] }: Produc
                                 <TableBody>
                                     {table.getRowModel().rows.length ? (
                                         table.getRowModel().rows.map((row) => (
-                                        <TableRow
-                                            key={row.id}
-                                            className="hover:bg-muted/50"
-                                        >
+                                            <TableRow
+                                                key={row.id}
+                                                className="hover:bg-muted/50"
+                                            >
                                                 {row.getVisibleCells().map((cell) => (
                                                     <TableCell key={cell.id}>
                                                         {flexRender(

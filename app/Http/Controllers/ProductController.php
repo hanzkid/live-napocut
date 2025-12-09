@@ -164,7 +164,7 @@ class ProductController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $index => $image) {
                 $path = $image->store('products', 's3');
-                $url = config('livekit.s3_public_url').'/'.$path;
+                $url = config('livekit.s3_public_url') . '/' . $path;
 
                 ProductImage::create([
                     'product_id' => $product->id,
@@ -206,7 +206,7 @@ class ProductController extends Controller
 
             foreach ($request->file('images') as $index => $image) {
                 $path = $image->store('products', 's3');
-                $url = config('livekit.s3_public_url').'/'.$path;
+                $url = config('livekit.s3_public_url') . '/' . $path;
 
                 ProductImage::create([
                     'product_id' => $product->id,
@@ -272,7 +272,7 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return redirect()
                 ->route('products.index')
-                ->with('error', 'Failed to import product: '.$e->getMessage());
+                ->with('error', 'Failed to import product: ' . $e->getMessage());
         }
     }
 
@@ -288,7 +288,7 @@ class ProductController extends Controller
         try {
             foreach ($request->file('images') as $index => $image) {
                 $path = $image->store('products', 's3');
-                $url = config('livekit.s3_public_url').'/'.$path;
+                $url = config('livekit.s3_public_url') . '/' . $path;
 
                 ProductImage::create([
                     'product_id' => $product->id,
@@ -305,7 +305,7 @@ class ProductController extends Controller
                 'product_id' => $product->id,
             ]);
 
-            return redirect()->back()->with('error', 'Failed to upload images: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Failed to upload images: ' . $e->getMessage());
         }
     }
 
@@ -323,11 +323,49 @@ class ProductController extends Controller
 
     public function toggleVisibility(Product $product): RedirectResponse
     {
-        $product->is_show = ! $product->is_show;
+        $product->is_show = !$product->is_show;
         $product->save();
 
         return redirect()
             ->back()
             ->with('success', 'Product visibility updated.');
+    }
+
+    public function toggleAllVisibility(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'visible' => ['required', 'boolean'],
+        ]);
+
+        Product::query()->update(['is_show' => $validated['visible']]);
+
+        $message = $validated['visible']
+            ? 'All products are now visible.'
+            : 'All products are now hidden.';
+
+        return redirect()
+            ->back()
+            ->with('success', $message);
+    }
+
+    public function toggleSelectedVisibility(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'visible' => ['required', 'boolean'],
+            'product_ids' => ['required', 'array'],
+            'product_ids.*' => ['integer', 'exists:products,id'],
+        ]);
+
+        Product::whereIn('id', $validated['product_ids'])
+            ->update(['is_show' => $validated['visible']]);
+
+        $count = count($validated['product_ids']);
+        $message = $validated['visible']
+            ? "{$count} product(s) are now visible."
+            : "{$count} product(s) are now hidden.";
+
+        return redirect()
+            ->back()
+            ->with('success', $message);
     }
 }

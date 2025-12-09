@@ -16,6 +16,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('livestream', LivestreamController::class)->names('livestream');
     Route::resource('categories', CategoryController::class)->except(['create', 'edit']);
     Route::resource('discount-codes', DiscountCodeController::class)->except(['create', 'edit']);
+    Route::patch('products/toggle-all-visibility', [ProductController::class, 'toggleAllVisibility'])->name('products.toggle-all-visibility');
+    Route::patch('products/toggle-selected-visibility', [ProductController::class, 'toggleSelectedVisibility'])->name('products.toggle-selected-visibility');
+    Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility'])->name('products.toggle-visibility');
     Route::resource('products', ProductController::class);
     Route::get('products-search', [ProductController::class, 'search'])->name('products.search');
     Route::post('products/import-from-url', [ProductController::class, 'importFromUrl'])->name('products.import-from-url');
@@ -24,10 +27,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // TODO: Re-enable after client approval
     // Route::post('livestream/{livestream}/products', [LivestreamController::class, 'attachProduct'])->name('livestream.products.attach');
     // Route::delete('livestream/{livestream}/products/{product}', [LivestreamController::class, 'detachProduct'])->name('livestream.products.detach');
-    Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility'])->name('products.toggle-visibility');
+
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';
 
 Route::get('/', [FrontController::class, 'livestream'])->name('live');
 
