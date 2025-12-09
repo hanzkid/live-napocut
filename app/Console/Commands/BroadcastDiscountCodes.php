@@ -31,9 +31,9 @@ class BroadcastDiscountCodes extends Command
         $now = now();
         $twentyFourHoursLater = $now->copy()->addHours(24);
 
-        $discountCodes = DiscountCode::where(function ($query) use ($now, $twentyFourHoursLater) {
+        $discountCodes = DiscountCode::where(function ($query) use ($twentyFourHoursLater) {
             // Codes that start within 24 hours (or have no start date, or already started)
-            $query->where(function ($q) use ($now, $twentyFourHoursLater) {
+            $query->where(function ($q) use ($twentyFourHoursLater) {
                 $q->whereNull('valid_start_date')
                     ->orWhere('valid_start_date', '<=', $twentyFourHoursLater);
             });

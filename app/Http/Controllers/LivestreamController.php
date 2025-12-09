@@ -25,7 +25,7 @@ class LivestreamController extends Controller
         ])
         // TODO: Re-enable after client approval
         // ->with('products.images')
-        ->latest()->get();
+            ->latest()->get();
 
         return Inertia::render('livestream/index', [
             'streams' => $streams,
