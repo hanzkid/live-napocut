@@ -46,6 +46,7 @@ const Index = (props: {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNameDialog, setShowNameDialog] = useState(false);
   const [validDiscountCodes, setValidDiscountCodes] = useState<DiscountCode[]>([]);
+  const [streamEnded, setStreamEnded] = useState(false);
 
 
   // Initialize discount codes from props
@@ -77,6 +78,25 @@ const Index = (props: {
       window.Echo.leave('discount-codes');
     };
   }, [props.is_active]);
+
+  // Set up Laravel Echo connection for livestream status updates
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.Echo) {
+      return;
+    }
+
+    const channel = window.Echo.channel('livestream-status');
+
+    channel
+      .listen('.ended', (data: { message: string }) => {
+        setStreamEnded(true);
+      });
+
+    // Cleanup on unmount
+    return () => {
+      window.Echo.leave('livestream-status');
+    };
+  }, []);
 
   // Check localStorage for saved name and auto-submit if user is guest
   useEffect(() => {
@@ -158,7 +178,7 @@ const Index = (props: {
 
   return (
     <div className="fixed inset-0 w-full h-[100dvh] overflow-hidden bg-black">
-      {props.is_active && props.livekit_token ? (
+      {props.is_active && props.livekit_token && !streamEnded ? (
         <LiveKitRoom
           key={props.livekit_token}
           serverUrl={props.livekit_ws_url}
@@ -219,8 +239,14 @@ const Index = (props: {
       ) : (
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-white mb-2">No Active Stream</h2>
-            <p className="text-white/60">There is no livestream currently active. Please check back later.</p>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              {streamEnded ? "Livestream Has Ended" : "No Active Stream"}
+            </h2>
+            <p className="text-white/60">
+              {streamEnded
+                ? "The livestream has ended. Thank you for watching!"
+                : "There is no livestream currently active. Please check back later."}
+            </p>
           </div>
         </div>
       )}

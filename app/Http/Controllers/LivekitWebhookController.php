@@ -38,7 +38,7 @@ class LivekitWebhookController extends Controller
                     break;
 
                 default:
-                    // Unknown event type, no action needed
+                // Unknown event type, no action needed
             }
 
             return response()->json(['success' => true], 200);
@@ -86,6 +86,9 @@ class LivekitWebhookController extends Controller
                 'is_active' => false,
                 'ended_at' => now(),
             ]);
+
+            // Broadcast livestream ended event
+            event(new \App\Events\LivestreamEnded());
         }
     }
 }
