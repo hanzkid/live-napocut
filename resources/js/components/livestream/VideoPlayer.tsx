@@ -168,7 +168,7 @@ export const VideoPlayer = ({ hlsUrl }: VideoPlayerProps) => {
 
 
       {/* Top Controls */}
-      <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/60 to-transparent z-10">
+      <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/60 to-transparent z-40">
         <div className="flex items-center justify-between gap-2">
           {/* Mute/Unmute Button */}
           <Button
