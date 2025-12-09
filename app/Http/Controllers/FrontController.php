@@ -29,11 +29,11 @@ class FrontController extends Controller
 
         $hlsUrl = null;
         if ($activeStream && $activeStream->s3_path) {
-            $hlsUrl = config('livekit.s3_public_url').'/'.$activeStream->s3_path;
+            $hlsUrl = config('livekit.s3_public_url') . '/' . $activeStream->s3_path;
         }
 
         // Generate guest token if user doesn't have one and stream is active
-        if (! $token && $activeStream) {
+        if (!$token && $activeStream) {
             $roomName = $activeStream->title;
 
             // Use provided name from request (localStorage) or generate guest name
@@ -41,7 +41,7 @@ class FrontController extends Controller
             if ($name) {
                 $guestName = $name;
             } else {
-                $guestName = 'Guest_'.rand(1000, 9999);
+                $guestName = 'Guest_' . rand(1000, 9999);
             }
 
             $tokenOptions = (new \Agence104\LiveKit\AccessTokenOptions)
@@ -72,35 +72,24 @@ class FrontController extends Controller
                     'link' => $product->link,
                     'category' => $product->category?->name,
                     'image' => $product->images->first()?->url,
-                    'images' => $product->images->map(fn ($img) => $img->url)->toArray(),
+                    'images' => $product->images->map(fn($img) => $img->url)->toArray(),
                 ];
             })->toArray();
         }
 
-        // Fetch discount codes valid within next 24 hours
-        $now = now();
-        $twentyFourHoursLater = $now->copy()->addHours(24);
-        
-        $discountCodes = DiscountCode::where(function ($query) use ($now, $twentyFourHoursLater) {
-            // Codes that start within 24 hours or have already started
-            $query->where(function ($q) use ($now, $twentyFourHoursLater) {
-                $q->whereNull('valid_start_date')
-                    ->orWhereBetween('valid_start_date', [$now, $twentyFourHoursLater])
-                    ->orWhere('valid_start_date', '<=', $now);
-            });
+        $discountCodes = DiscountCode::where(function ($query) {
+            $query->whereNull('valid_start_date')
+                ->orWhere('valid_start_date', '<=', now());
         })
-            ->where(function ($query) use ($now) {
-                // Codes that haven't expired yet (or have no end date)
+            ->where(function ($query) {
                 $query->whereNull('valid_end_date')
-                    ->orWhere('valid_end_date', '>=', $now);
+                    ->orWhere('valid_end_date', '>=', now());
             })
             ->get()
             ->map(function ($code) {
                 return [
                     'code' => $code->discount_code,
                     'description' => $code->description,
-                    'valid_start_date' => $code->valid_start_date?->toIso8601String(),
-                    'valid_end_date' => $code->valid_end_date?->toIso8601String(),
                 ];
             })
             ->toArray();
@@ -128,7 +117,7 @@ class FrontController extends Controller
             ->latest()
             ->first();
 
-        if (! $activeStream) {
+        if (!$activeStream) {
             return back()->withErrors([
                 'name' => 'No active livestream available at the moment.',
             ]);
