@@ -82,3 +82,9 @@ export function useAppearance() {
 
     return { appearance, updateAppearance } as const;
 }
+
+export function applyThemeFront(appearance: Appearance) {
+
+    applyTheme(appearance);
+
+}

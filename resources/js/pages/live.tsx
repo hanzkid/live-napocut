@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShoppingBag } from "lucide-react";
 import { Product, ChatMessage } from "@/types/livestream";
+import { applyThemeFront } from "@/hooks/use-appearance";
 
 type DiscountCode = {
   code: string;
@@ -96,6 +97,11 @@ const Index = (props: {
     return () => {
       window.Echo.leave('livestream-status');
     };
+  }, []);
+
+  // apply theme to light
+  useEffect(() => {
+    applyThemeFront('light');
   }, []);
 
   // Check localStorage for saved name and auto-submit if user is guest
