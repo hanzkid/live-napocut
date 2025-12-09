@@ -8,6 +8,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -189,3 +190,6 @@ Artisan::command('products:import-from-failed-csv {path? : Path to failed CSV fi
 
     fclose($handle);
 })->purpose('Import products again based on entries from failed.csv');
+
+// Schedule discount codes broadcast every minute
+Schedule::command('discount-codes:broadcast')->everyMinute();

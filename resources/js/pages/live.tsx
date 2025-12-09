@@ -24,6 +24,8 @@ import { Product, ChatMessage } from "@/types/livestream";
 type DiscountCode = {
   code: string;
   description: string | null;
+  valid_start_date: string | null;
+  valid_end_date: string | null;
 };
 
 const Index = (props: {
@@ -43,7 +45,58 @@ const Index = (props: {
   const [nameError, setNameError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNameDialog, setShowNameDialog] = useState(false);
+  const [validDiscountCodes, setValidDiscountCodes] = useState<DiscountCode[]>([]);
+  const [streamEnded, setStreamEnded] = useState(false);
 
+
+  // Initialize discount codes from props
+  useEffect(() => {
+    if (props.discountCodes) {
+      setValidDiscountCodes(props.discountCodes);
+    }
+  }, [props.discountCodes]);
+
+  // Set up Laravel Echo connection for real-time discount code updates
+  useEffect(() => {
+    if (!props.is_active) {
+      return;
+    }
+
+    if (typeof window === 'undefined' || !window.Echo) {
+      return;
+    }
+
+    const channel = window.Echo.channel('discount-codes');
+
+    channel
+      .listen('.updated', (data: { discountCodes: DiscountCode[] }) => {
+        setValidDiscountCodes(data.discountCodes);
+      });
+
+    // Cleanup on unmount
+    return () => {
+      window.Echo.leave('discount-codes');
+    };
+  }, [props.is_active]);
+
+  // Set up Laravel Echo connection for livestream status updates
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.Echo) {
+      return;
+    }
+
+    const channel = window.Echo.channel('livestream-status');
+
+    channel
+      .listen('.ended', (data: { message: string }) => {
+        setStreamEnded(true);
+      });
+
+    // Cleanup on unmount
+    return () => {
+      window.Echo.leave('livestream-status');
+    };
+  }, []);
 
   // Check localStorage for saved name and auto-submit if user is guest
   useEffect(() => {
@@ -71,7 +124,7 @@ const Index = (props: {
     event.preventDefault();
 
     if (!viewerName.trim()) {
-      setNameError("Please enter your name to continue.");
+      setNameError("Masukkan nama kamu dulu untuk lanjut.");
       return;
     }
 
@@ -125,7 +178,7 @@ const Index = (props: {
 
   return (
     <div className="fixed inset-0 w-full h-[100dvh] overflow-hidden bg-black">
-      {props.is_active && props.livekit_token ? (
+      {props.is_active && props.livekit_token && !streamEnded ? (
         <LiveKitRoom
           key={props.livekit_token}
           serverUrl={props.livekit_ws_url}
@@ -170,7 +223,7 @@ const Index = (props: {
           {/* Product Drawer */}
           <ProductDrawer
             products={props.products}
-            discountCodes={props.discountCodes}
+            discountCodes={validDiscountCodes}
             onProductClick={handleProductClick}
             open={drawerOpen}
             onOpenChange={setDrawerOpen}
@@ -186,8 +239,14 @@ const Index = (props: {
       ) : (
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-white mb-2">No Active Stream</h2>
-            <p className="text-white/60">There is no livestream currently active. Please check back later.</p>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              {streamEnded ? "Live Shopping Sudah Berakhir" : "Belum Ada Live Saat Ini"}
+            </h2>
+            <p className="text-white/60">
+              {streamEnded
+                ? "Live shopping sudah selesai, terima kasih sudah menonton!"
+                : "Belum ada live shopping sekarang. Coba cek lagi nanti, ya!"}
+            </p>
           </div>
         </div>
       )}
@@ -196,17 +255,17 @@ const Index = (props: {
         <Dialog open={showNameDialog} onOpenChange={setShowNameDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Set your display name</DialogTitle>
+              <DialogTitle>Masukkan Nama Kamu</DialogTitle>
               <DialogDescription>
-                Enter your name to participate in the chat and interact with others.
+                Masukkan nama kamu untuk ikutan chat dan belanja bareng.
               </DialogDescription>
             </DialogHeader>
             <form className="space-y-4" onSubmit={handleNameSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="viewer-name">Name</Label>
+                <Label htmlFor="viewer-name">Nama</Label>
                 <Input
                   id="viewer-name"
-                  placeholder="Alex Kim"
+                  placeholder="Budi Santoso"
                   value={viewerName}
                   onChange={(event) => setViewerName(event.target.value)}
                   aria-invalid={Boolean(nameError)}
@@ -219,11 +278,11 @@ const Index = (props: {
               </div>
               <DialogFooter className="flex-col gap-2">
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Joining…" : "Join chat"}
+                  {isSubmitting ? "Sedang bergabung…" : "Gabung Chat"}
                 </Button>
                 {isSubmitting && (
                   <p className="text-sm text-muted-foreground text-center">
-                    Setting up your chat access...
+                    Menyiapkan chat kamu...
                   </p>
                 )}
               </DialogFooter>
