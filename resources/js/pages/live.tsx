@@ -57,18 +57,46 @@ const Index = (props: {
 
   // Set up Laravel Echo connection for real-time discount code updates
   useEffect(() => {
-    if (!props.is_active || !window.Echo) {
+    console.log('🔍 Checking Echo setup...', {
+      is_active: props.is_active,
+      echoAvailable: typeof window !== 'undefined' && !!window.Echo,
+    });
+
+    if (!props.is_active) {
+      console.log('⚠️ Stream is not active, skipping Echo setup');
       return;
     }
 
+    if (typeof window === 'undefined' || !window.Echo) {
+      console.error('❌ Echo is not available! Check if bootstrap/echo.ts is loaded correctly.');
+      return;
+    }
+
+    console.log('📡 Subscribing to discount-codes channel...');
     const channel = window.Echo.channel('discount-codes');
 
-    channel.listen('.updated', (data: { discountCodes: DiscountCode[] }) => {
-      setValidDiscountCodes(data.discountCodes);
+    channel
+      .subscribed(() => {
+        console.log('✅ Successfully subscribed to discount-codes channel');
+      })
+      .listen('.updated', (data: { discountCodes: DiscountCode[] }) => {
+        console.log('📨 Received discount codes update:', data);
+        console.log('📨 Discount codes array:', data.discountCodes);
+        setValidDiscountCodes(data.discountCodes);
+        console.log('✅ State updated with new discount codes');
+      })
+      .error((error: any) => {
+        console.error('❌ Channel error:', error);
+      });
+
+    // Add listener for all events on this channel (for debugging)
+    channel.listenToAll((eventName: string, data: any) => {
+      console.log('🔔 Event received on discount-codes channel:', eventName, data);
     });
 
     // Cleanup on unmount
     return () => {
+      console.log('🔌 Leaving discount-codes channel');
       window.Echo.leave('discount-codes');
     };
   }, [props.is_active]);

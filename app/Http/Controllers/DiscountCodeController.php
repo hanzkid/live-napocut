@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DiscountCode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -43,6 +44,9 @@ class DiscountCodeController extends Controller
 
         DiscountCode::create($validated);
 
+        // Broadcast updated discount codes immediately
+        Artisan::call('discount-codes:broadcast');
+
         return redirect()
             ->route('discount-codes.index')
             ->with('success', 'Discount code created successfully.');
@@ -59,6 +63,9 @@ class DiscountCodeController extends Controller
 
         $discountCode->update($validated);
 
+        // Broadcast updated discount codes immediately
+        Artisan::call('discount-codes:broadcast');
+
         return redirect()
             ->route('discount-codes.index')
             ->with('success', 'Discount code updated successfully.');
@@ -67,6 +74,9 @@ class DiscountCodeController extends Controller
     public function destroy(DiscountCode $discountCode): RedirectResponse
     {
         $discountCode->delete();
+
+        // Broadcast updated discount codes immediately
+        Artisan::call('discount-codes:broadcast');
 
         return redirect()
             ->route('discount-codes.index')
