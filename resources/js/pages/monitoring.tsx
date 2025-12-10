@@ -206,12 +206,12 @@ const MonitoringContent = (props: {
 
     if (!props.is_active || !props.livekit_token || streamEnded) {
         return (
-            <div className="flex items-center justify-center h-full bg-gray-100">
+            <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    <h2 className="text-2xl font-bold mb-2">
                         {streamEnded ? "Livestream Ended" : "No Active Livestream"}
                     </h2>
-                    <p className="text-gray-600">
+                    <p className="">
                         {streamEnded
                             ? "The livestream has ended."
                             : "There is no active livestream at the moment."}
