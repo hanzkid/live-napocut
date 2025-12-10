@@ -38,6 +38,8 @@ const Index = (props: {
   is_guest: boolean;
   products: Product[];
   discountCodes?: DiscountCode[];
+  livestream_id: number | null;
+  user_name: string;
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -104,26 +106,31 @@ const Index = (props: {
     applyThemeFront('light');
   }, []);
 
-  // Check localStorage for saved name and auto-submit if user is guest
+  // Check if user needs to set their name (guest without saved name)
   useEffect(() => {
-    const savedName = localStorage.getItem("livestream_viewer_name");
+    if (props.is_guest && !props.livekit_token) {
+      const savedName = localStorage.getItem("livestream_viewer_name");
 
-    // If user is a guest and has a saved name, automatically submit it
-    // This works even if they already have a Guest_xxx token
-    if (props.is_guest && savedName && props.is_active) {
-      router.post(
-        "/live",
-        { name: savedName },
-        {
-          preserveScroll: true,
-          preserveState: false,
-          onSuccess: () => {
-            router.reload({ only: ['livekit_token', 'is_guest'] });
-          },
-        }
-      );
+      // If user is a guest and has a saved name, automatically submit it
+      // This works even if they already have a Guest_xxx token
+      if (savedName && props.is_active) {
+        router.post(
+          "/live",
+          { name: savedName },
+          {
+            preserveScroll: true,
+            preserveState: false,
+            onSuccess: () => {
+              // Token will be updated via Inertia
+            },
+          }
+        );
+      } else if (!savedName) {
+        // No saved name, show the dialog
+        setShowNameDialog(true);
+      }
     }
-  }, []); // Run only once on mount
+  }, [props.is_guest, props.livekit_token, props.is_active]);
 
 
   const handleNameSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -223,6 +230,7 @@ const Index = (props: {
                 </Button>
               }
               onInputClick={props.is_guest ? handleChatInputClick : undefined}
+              livestreamId={props.livestream_id || undefined}
             />
           </div>
 

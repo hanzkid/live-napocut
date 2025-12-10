@@ -6,6 +6,7 @@ use App\Http\Controllers\DiscountCodeController;
 use App\Http\Controllers\FrontController;
 use App\Http\Controllers\LivekitWebhookController;
 use App\Http\Controllers\LivestreamController;
+use App\Http\Controllers\LivestreamMessageController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,3 +37,7 @@ require __DIR__ . '/settings.php';
 Route::get('/', [FrontController::class, 'livestream'])->name('live');
 
 Route::post('live', [FrontController::class, 'joinLivestream'])->name('join-livestream');
+
+// Livestream messages API
+Route::post('/api/livestream-messages', [LivestreamMessageController::class, 'store'])->name('livestream-messages.store');
+Route::get('/api/livestream-messages/{livestream}', [LivestreamMessageController::class, 'index'])->name('livestream-messages.index');

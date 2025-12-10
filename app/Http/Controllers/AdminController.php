@@ -143,6 +143,8 @@ class AdminController extends Controller
             'is_active' => $activeStream?->is_active ?? false,
             'products' => $products,
             'discountCodes' => $discountCodes,
+            'livestream_id' => $activeStream?->id,
+            'user_name' => $user?->name ?? 'Admin',
         ]);
     }
 }

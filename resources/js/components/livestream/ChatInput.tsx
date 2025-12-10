@@ -7,16 +7,40 @@ import { Send } from "lucide-react";
 interface ChatInputProps {
   drawerTrigger?: React.ReactNode;
   onInputClick?: () => void;
+  livestreamId?: number;
 }
 
-export const ChatInput = ({ drawerTrigger, onInputClick }: ChatInputProps) => {
+export const ChatInput = ({ drawerTrigger, onInputClick, livestreamId }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const { send } = useChat();
+
+  let userName = localStorage.getItem("livestream_viewer_name") || "Viewer";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
+      // Send via LiveKit for real-time delivery
       await send(message);
+
+      // Also persist to database if livestreamId and userName are provided
+      if (livestreamId && userName) {
+        try {
+          await fetch('/api/livestream-messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              livestream_id: livestreamId,
+              user_name: userName,
+              message: message.trim(),
+            }),
+          });
+        } catch (error) {
+          console.error('Failed to persist message:', error);
+        }
+      }
+
       setMessage("");
     }
   };
