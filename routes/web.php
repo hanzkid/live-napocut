@@ -28,6 +28,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route::post('livestream/{livestream}/products', [LivestreamController::class, 'attachProduct'])->name('livestream.products.attach');
     // Route::delete('livestream/{livestream}/products/{product}', [LivestreamController::class, 'detachProduct'])->name('livestream.products.detach');
 
+    Route::get('/monitoring', [AdminController::class, 'monitoring'])->name('monitoring');
 });
 
 require __DIR__ . '/settings.php';

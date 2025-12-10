@@ -35,7 +35,7 @@ class Livekit
 
         // Configure HLS segmented output for livestreaming (live only, no VOD recording)
         // Using 1-second segments for lower latency (LL-HLS approach)
-        $s3Path = $roomName.'-'.Str::random(8).'/';
+        $s3Path = Str::uuid().'/';
         $segmentedOutput = new SegmentedFileOutput([
             'filename_prefix' => $s3Path,
             'live_playlist_name' => 'live.m3u8',

@@ -62,4 +62,87 @@ class AdminController extends Controller
             'activeDiscountCodes' => $activeDiscountCodes,
         ]);
     }
+
+    public function monitoring()
+    {
+        $livekit = config('livekit');
+        $user = auth()->user();
+
+        $activeStream = LiveStream::where('is_active', true)
+            ->latest()
+            ->first();
+
+        $rawProducts = Product::where('is_show', true)
+            ->with(['images', 'category'])
+            ->get();
+
+        $hlsUrl = null;
+        if ($activeStream && $activeStream->s3_path) {
+            $hlsUrl = config('livekit.s3_public_url') . '/' . $activeStream->s3_path;
+        }
+
+        // Generate admin token if stream is active
+        $token = null;
+        if ($activeStream && $user) {
+            $roomName = $activeStream->title;
+            $adminName = $user->name ?? 'Admin';
+
+            $tokenOptions = (new \Agence104\LiveKit\AccessTokenOptions)
+                ->setIdentity($adminName);
+
+            $videoGrant = (new \Agence104\LiveKit\VideoGrant)
+                ->setRoomJoin()
+                ->setRoomName($roomName);
+
+            $token = (new \Agence104\LiveKit\AccessToken($livekit['api_key'], $livekit['api_secret']))
+                ->init($tokenOptions)
+                ->setGrant($videoGrant)
+                ->toJwt();
+        }
+
+        $products = [];
+        if ($activeStream) {
+            $products = $rawProducts->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => $product->price,
+                    'formatted_price' => $product->formatted_price,
+                    'plain_price' => $product->plain_price,
+                    'description' => $product->description,
+                    'link' => $product->link,
+                    'category' => $product->category?->name,
+                    'image' => $product->images->first()?->url,
+                    'images' => $product->images->map(fn($img) => $img->url)->toArray(),
+                ];
+            })->toArray();
+        }
+
+        $discountCodes = DiscountCode::where(function ($query) {
+            $query->whereNull('valid_start_date')
+                ->orWhere('valid_start_date', '<=', now());
+        })
+            ->where(function ($query) {
+                $query->whereNull('valid_end_date')
+                    ->orWhere('valid_end_date', '>=', now());
+            })
+            ->get()
+            ->map(function ($code) {
+                return [
+                    'code' => $code->discount_code,
+                    'description' => $code->description,
+                ];
+            })
+            ->toArray();
+
+        return Inertia::render('monitoring', [
+            'livekit_ws_url' => $livekit['ws_url'],
+            'livekit_token' => $token,
+            'room_name' => $activeStream?->title,
+            'hls_url' => $hlsUrl,
+            'is_active' => $activeStream?->is_active ?? false,
+            'products' => $products,
+            'discountCodes' => $discountCodes,
+        ]);
+    }
 }

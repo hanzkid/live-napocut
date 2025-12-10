@@ -13,7 +13,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { LayoutGrid, Video, Package, Folder, Tag } from 'lucide-react';
+import { LayoutGrid, Video, Package, Folder, Tag, Monitor } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -26,6 +26,11 @@ const mainNavItems: NavItem[] = [
         title: 'Livestream',
         href: '/livestream',
         icon: Video,
+    },
+    {
+        title: 'Monitoring',
+        href: '/monitoring',
+        icon: Monitor,
     },
     {
         title: 'Categories',
