@@ -38,18 +38,25 @@ export const VideoPlayer = ({ hlsUrl }: VideoPlayerProps) => {
         enableWorker: true,
         lowLatencyMode: true,
         // Optimize for low latency
-        maxBufferLength: 4,           // Reduced from default 30s
-        maxMaxBufferLength: 8,         // Reduced from default 600s
-        maxBufferSize: 10 * 1000 * 1000, // 10MB
-        maxBufferHole: 0.5,            // Reduced from default 0.5s
-        highBufferWatchdogPeriod: 1,   // Check buffer health every 1s
-        nudgeMaxRetry: 5,              // Retry nudging playhead
-        // Live sync optimizations
-        liveSyncDurationCount: 2,      // Reduced from default 3 (more aggressive live sync)
-        liveMaxLatencyDurationCount: 5, // Reduced from default 10
-        liveDurationInfinity: false,
-        // Reduce initial buffering
-        maxLiveSyncPlaybackRate: 1.5,  // Speed up to catch live edge
+        maxBufferLength: 5,
+        maxMaxBufferLength: 10,
+        backBufferLength: 3,
+        maxBufferHole: 0.5,
+
+        // === Latency sync (balanced) ===
+        liveSyncDurationCount: 3,     // 2–3 = low delay
+        liveMaxLatencyDurationCount: 6,
+
+        // === Retry (for stability) ===
+        fragLoadingRetryDelay: 300,
+        fragLoadingMaxRetry: 8,
+        manifestLoadingRetryDelay: 500,
+        manifestLoadingMaxRetry: 8,
+        levelLoadingRetryDelay: 500,
+        levelLoadingMaxRetry: 8,
+
+        // faster recovery for broken segments
+        progressive: true, // Speed up to catch live edge
       });
 
       hls.loadSource(hlsUrl);
