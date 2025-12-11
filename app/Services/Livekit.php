@@ -2,27 +2,44 @@
 
 namespace App\Services;
 
+use Agence104\LiveKit\EgressServiceClient;
 use Agence104\LiveKit\IngressServiceClient;
 use Agence104\LiveKit\RoomCreateOptions;
 use Agence104\LiveKit\RoomServiceClient;
 use Illuminate\Support\Str;
-use Livekit\AutoParticipantEgress;
+use Livekit\EncodingOptionsPreset;
+use Livekit\EncodingOptions;
 use Livekit\IngressInput;
-use Livekit\RoomEgress;
 use Livekit\S3Upload;
 use Livekit\SegmentedFileOutput;
 use Livekit\SegmentedFileProtocol;
 
 class Livekit
 {
-    public static function createRoom(string $roomName)
+    /**
+     * Stop an existing egress by ID
+     */
+    public static function stopEgress(string $egressId): void
     {
-        $roomService = new RoomServiceClient(
+        $egressService = new EgressServiceClient(
             config('livekit.api_url'),
             config('livekit.api_key'),
             config('livekit.api_secret'),
         );
 
+        try {
+            $egressService->stopEgress($egressId);
+        } catch (\Exception $e) {
+            // Egress may already be stopped or not exist
+            \Log::warning("Failed to stop egress {$egressId}: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * Start egress for a room with given S3 path
+     */
+    public static function startEgressForRoom(string $roomName, string $s3Path): string
+    {
         // Configure S3 upload
         $s3 = new S3Upload([
             'access_key' => config('livekit.s3_access_key'),
@@ -33,31 +50,48 @@ class Livekit
             'force_path_style' => true,
         ]);
 
-        // Configure HLS segmented output for livestreaming (live only, no VOD recording)
-        // Using 1-second segments for lower latency (LL-HLS approach)
-        $s3Path = Str::uuid().'/';
+        // Configure HLS segmented output
         $segmentedOutput = new SegmentedFileOutput([
             'filename_prefix' => $s3Path,
             'live_playlist_name' => 'live.m3u8',
-            'segment_duration' => 3, // Reduced from 3s to 1s for lower latency
+            'segment_duration' => 3,
             'protocol' => SegmentedFileProtocol::HLS_PROTOCOL,
         ]);
         $segmentedOutput->setS3($s3);
 
-        // Configure automatic participant egress (records each participant's stream as HLS)
-        $participantEgress = new AutoParticipantEgress([
-            'segment_outputs' => [$segmentedOutput],
-        ]);
+        // Start room composite egress
+        $egressService = new EgressServiceClient(
+            config('livekit.api_url'),
+            config('livekit.api_key'),
+            config('livekit.api_secret'),
+        );
 
-        // Configure room egress
-        $roomEgress = new RoomEgress;
-        $roomEgress->setParticipant($participantEgress);
+        $options = new EncodingOptions();
+        $options->preset = EncodingOptionsPreset::PORTRAIT_H264_720P_30;
 
-        // Create room with egress configuration
+        $egress = $egressService->startRoomCompositeEgress(
+            $roomName,
+            '',  // Empty layout
+            $segmentedOutput,
+            $options, // Portrait 720p 30fps
+            false // Not audio only
+        );
+
+        return $egress->getEgressId();
+    }
+
+    public static function createRoom(string $roomName)
+    {
+        $roomService = new RoomServiceClient(
+            config('livekit.api_url'),
+            config('livekit.api_key'),
+            config('livekit.api_secret'),
+        );
+
+        // Create room WITHOUT egress - egress will be started via webhook when ingress starts
         $opts = (new RoomCreateOptions)
             ->setName($roomName)
-            ->setMetadata(json_encode([]))
-            ->setEgress($roomEgress);
+            ->setMetadata(json_encode([]));
 
         $room = $roomService->createRoom($opts);
 
@@ -80,7 +114,8 @@ class Livekit
             'ws_url' => $ingress->getUrl(),
             'stream_key' => $ingress->getStreamKey(),
             'ingress_id' => $ingress->getIngressId(),
-            's3_path' => $s3Path.'live.m3u8',
+            'egress_id' => null, // Egress will be created via webhook
+            's3_path' => null,
         ];
     }
 }

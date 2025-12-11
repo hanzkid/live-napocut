@@ -11,6 +11,7 @@ class LiveStream extends Model
         'ws_url',
         'stream_key',
         'ingress_id',
+        'egress_id',
         's3_path',
         'is_active',
         'started_at',

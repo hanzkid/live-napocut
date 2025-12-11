@@ -23,8 +23,8 @@ class LivestreamController extends Controller
             'ended_at',
             'created_at',
         ])
-        // TODO: Re-enable after client approval
-        // ->with('products.images')
+            // TODO: Re-enable after client approval
+            // ->with('products.images')
             ->latest()->get();
 
         return Inertia::render('livestream/index', [
@@ -83,6 +83,7 @@ class LivestreamController extends Controller
             'ws_url' => $streamData['ws_url'],
             'stream_key' => $streamData['stream_key'],
             'ingress_id' => $streamData['ingress_id'],
+            'egress_id' => $streamData['egress_id'],
             's3_path' => $streamData['s3_path'],
         ]);
 
