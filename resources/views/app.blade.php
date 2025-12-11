@@ -20,7 +20,6 @@
         })();
     </script>
 
-    {{-- Inline style to set the HTML background color based on our theme in app.css --}}
     <style>
         html {
             background-color: oklch(1 0 0);
@@ -38,27 +37,27 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
     <meta name="description"
-        content="Belanja langsung dari live streaming Napocut. Dapatkan produk fashion terbaik dengan harga spesial hanya saat live!" />
+        content="JOIN Live Now! Dapatkan produk gratis selama Live, mulai dari voucher diskon 50rb hingga gratis ongkir." />
 
     <!-- Google / Search Engine Tags -->
-    <meta itemprop="name" content="Live Napocut - Live Shopping Fashion" />
+    <meta itemprop="name" content="Napocut - Live Shopping" />
     <meta itemprop="description"
-        content="Belanja langsung dari live streaming Napocut. Dapatkan produk fashion terbaik dengan harga spesial hanya saat live!" />
+        content="JOIN Live Now! Dapatkan produk gratis selama Live, mulai dari voucher diskon 50rb hingga gratis ongkir." />
     <meta itemprop="image" content="https://live.napocut.com/og.jpeg" />
 
     <!-- Facebook Meta Tags -->
     <meta property="og:url" content="https://live.napocut.com/" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Live Napocut - Live Shopping Fashion" />
+    <meta property="og:title" content="Napocut - Live Shopping" />
     <meta property="og:description"
-        content="Belanja langsung dari live streaming Napocut. Dapatkan produk fashion terbaik dengan harga spesial hanya saat live!" />
+        content="JOIN Live Now! Dapatkan produk gratis selama Live, mulai dari voucher diskon 50rb hingga gratis ongkir." />
     <meta property="og:image" content="https://live.napocut.com/og.jpeg" />
 
     <!-- Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Live Napocut - Live Shopping Fashion" />
+    <meta name="twitter:title" content="Napocut - Live Shopping" />
     <meta name="twitter:description"
-        content="Belanja langsung dari live streaming Napocut. Dapatkan produk fashion terbaik dengan harga spesial hanya saat live!" />
+        content="JOIN Live Now! Dapatkan produk gratis selama Live, mulai dari voucher diskon 50rb hingga gratis ongkir." />
     <meta name="twitter:image" content="https://live.napocut.com/og.jpeg" />
 
     <link rel="preconnect" href="https://fonts.bunny.net">
