@@ -78,7 +78,7 @@ class AdminController extends Controller
 
         $hlsUrl = null;
         if ($activeStream && $activeStream->s3_path) {
-            $hlsUrl = config('livekit.s3_public_url') . '/' . $activeStream->s3_path;
+            $hlsUrl = config('livekit.s3_public_url').'/'.$activeStream->s3_path;
         }
 
         // Generate admin token if stream is active
@@ -113,7 +113,7 @@ class AdminController extends Controller
                     'link' => $product->link,
                     'category' => $product->category?->name,
                     'image' => $product->images->first()?->url,
-                    'images' => $product->images->map(fn($img) => $img->url)->toArray(),
+                    'images' => $product->images->map(fn ($img) => $img->url)->toArray(),
                 ];
             })->toArray();
         }

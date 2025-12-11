@@ -32,7 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/monitoring', [AdminController::class, 'monitoring'])->name('monitoring');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';
 
 Route::get('/', [FrontController::class, 'livestream'])->name('live');
 

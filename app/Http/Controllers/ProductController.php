@@ -164,7 +164,7 @@ class ProductController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $index => $image) {
                 $path = $image->store('products', 's3');
-                $url = config('livekit.s3_public_url') . '/' . $path;
+                $url = config('livekit.s3_public_url').'/'.$path;
 
                 ProductImage::create([
                     'product_id' => $product->id,
@@ -206,7 +206,7 @@ class ProductController extends Controller
 
             foreach ($request->file('images') as $index => $image) {
                 $path = $image->store('products', 's3');
-                $url = config('livekit.s3_public_url') . '/' . $path;
+                $url = config('livekit.s3_public_url').'/'.$path;
 
                 ProductImage::create([
                     'product_id' => $product->id,
@@ -272,7 +272,7 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return redirect()
                 ->route('products.index')
-                ->with('error', 'Failed to import product: ' . $e->getMessage());
+                ->with('error', 'Failed to import product: '.$e->getMessage());
         }
     }
 
@@ -288,7 +288,7 @@ class ProductController extends Controller
         try {
             foreach ($request->file('images') as $index => $image) {
                 $path = $image->store('products', 's3');
-                $url = config('livekit.s3_public_url') . '/' . $path;
+                $url = config('livekit.s3_public_url').'/'.$path;
 
                 ProductImage::create([
                     'product_id' => $product->id,
@@ -305,7 +305,7 @@ class ProductController extends Controller
                 'product_id' => $product->id,
             ]);
 
-            return redirect()->back()->with('error', 'Failed to upload images: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to upload images: '.$e->getMessage());
         }
     }
 
@@ -323,7 +323,7 @@ class ProductController extends Controller
 
     public function toggleVisibility(Product $product): RedirectResponse
     {
-        $product->is_show = !$product->is_show;
+        $product->is_show = ! $product->is_show;
         $product->save();
 
         return redirect()

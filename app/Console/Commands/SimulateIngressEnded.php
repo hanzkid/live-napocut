@@ -33,7 +33,7 @@ class SimulateIngressEnded extends Command
             // Find specific livestream by ingress_id
             $livestream = LiveStream::where('ingress_id', $ingressId)->first();
 
-            if (!$livestream) {
+            if (! $livestream) {
                 $this->error("No livestream found with ingress_id: {$ingressId}");
 
                 return Command::FAILURE;
@@ -44,7 +44,7 @@ class SimulateIngressEnded extends Command
                 ->latest()
                 ->first();
 
-            if (!$livestream) {
+            if (! $livestream) {
                 $this->error('No active livestream found');
 
                 return Command::FAILURE;
@@ -61,7 +61,7 @@ class SimulateIngressEnded extends Command
         ]);
 
         // Broadcast livestream ended event
-        event(new LivestreamEnded());
+        event(new LivestreamEnded);
 
         $this->info('✅ Livestream ended and broadcast sent!');
 

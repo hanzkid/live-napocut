@@ -6,9 +6,8 @@ use Agence104\LiveKit\EgressServiceClient;
 use Agence104\LiveKit\IngressServiceClient;
 use Agence104\LiveKit\RoomCreateOptions;
 use Agence104\LiveKit\RoomServiceClient;
-use Illuminate\Support\Str;
-use Livekit\EncodingOptionsPreset;
 use Livekit\EncodingOptions;
+use Livekit\EncodingOptionsPreset;
 use Livekit\IngressInput;
 use Livekit\S3Upload;
 use Livekit\SegmentedFileOutput;
@@ -66,7 +65,7 @@ class Livekit
             config('livekit.api_secret'),
         );
 
-        $options = new EncodingOptions();
+        $options = new EncodingOptions;
         $options->preset = EncodingOptionsPreset::PORTRAIT_H264_720P_30;
 
         $egress = $egressService->startRoomCompositeEgress(

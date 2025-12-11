@@ -2,12 +2,12 @@
 
 namespace App\Events;
 
+use App\Models\LivestreamMessage;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use App\Models\LivestreamMessage;
 
 class LivestreamMessageSent implements ShouldBroadcast
 {
@@ -31,7 +31,7 @@ class LivestreamMessageSent implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('livestream.' . $this->message->livestream_id),
+            new Channel('livestream.'.$this->message->livestream_id),
         ];
     }
 

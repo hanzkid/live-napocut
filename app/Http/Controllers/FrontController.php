@@ -32,11 +32,9 @@ class FrontController extends Controller
             $hlsUrl = config('livekit.s3_public_url') . '/' . $activeStream->s3_path;
         }
 
-        // Generate guest token if user doesn't have one and stream is active
         if (!$token && $activeStream) {
             $roomName = $activeStream->title;
 
-            // Use provided name from request (localStorage) or generate guest name
             $name = $request->input('name');
             if ($name) {
                 $guestName = $name;
@@ -130,7 +128,6 @@ class FrontController extends Controller
         $roomName = $activeStream->title;
         $newName = $request->input('name');
 
-        // Generate new token with the new name
         $tokenOptions = (new AccessTokenOptions)
             ->setIdentity($newName);
 
@@ -145,7 +142,6 @@ class FrontController extends Controller
 
         session(['livekit_token' => $token, 'is_guest' => false]);
 
-        // Return success without page reload
         return back();
     }
 }

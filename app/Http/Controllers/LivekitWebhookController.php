@@ -16,11 +16,9 @@ class LivekitWebhookController extends Controller
     public function handle(Request $request)
     {
         try {
-            // Get the raw body and authorization header
             $body = $request->getContent();
             $authHeader = $request->header('Authorization');
 
-            // Verify and decode the webhook using LiveKit SDK
             $receiver = new WebhookReceiver(
                 config('livekit.api_key'),
                 config('livekit.api_secret')
@@ -28,7 +26,6 @@ class LivekitWebhookController extends Controller
 
             $event = $receiver->receive($body, $authHeader);
 
-            // Handle different event types
             switch ($event->getEvent()) {
                 case 'ingress_started':
                     $this->handleIngressStarted($event);
@@ -66,7 +63,6 @@ class LivekitWebhookController extends Controller
         $livestream = LiveStream::where('ingress_id', $ingressId)->first();
 
         if ($livestream) {
-            // Start egress when ingress actually starts
             try {
                 $s3PathPrefix = $livestream->id . '-' . Str::random(8) . '/';
                 $egressId = \App\Services\Livekit::startEgressForRoom($roomName, $s3PathPrefix);
@@ -102,7 +98,7 @@ class LivekitWebhookController extends Controller
                         'is_active' => false,
                         'ended_at' => now(),
                     ]);
-                    event(new \App\Events\LivestreamEnded());
+                    event(new \App\Events\LivestreamEnded);
                 } catch (\Exception $e) {
                     Log::error("Failed to stop egress {$livestream->egress_id}: {$e->getMessage()}");
                 }
