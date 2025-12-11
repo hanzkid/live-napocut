@@ -7,7 +7,6 @@ use Agence104\LiveKit\IngressServiceClient;
 use Agence104\LiveKit\RoomCreateOptions;
 use Agence104\LiveKit\RoomServiceClient;
 use Livekit\EncodingOptions;
-use Livekit\EncodingOptionsPreset;
 use Livekit\IngressInput;
 use Livekit\S3Upload;
 use Livekit\SegmentedFileOutput;
@@ -61,8 +60,16 @@ class Livekit
             config('livekit.api_secret'),
         );
 
+        // Custom encoding options for high quality 1080p portrait
         $options = new EncodingOptions;
-        $options->preset = EncodingOptionsPreset::PORTRAIT_H264_1080P_30;
+        $options->setWidth(1080);           // Portrait width
+        $options->setHeight(1920);          // Portrait height (1080p)
+        $options->setVideoBitrate(8000);    // 8 Mbps for high quality
+        $options->setAudioBitrate(256);     // 256 kbps for high quality audio
+        $options->setAudioFrequency(48000); // 48 kHz audio
+        $options->setVideoCodec(\Livekit\VideoCodec::H264_HIGH); // H264 High profile
+        $options->setAudioCodec(\Livekit\AudioCodec::AAC); // AAC required for HLS
+        $options->setFramerate(30);         // 30 fps
 
         $egress = $egressService->startRoomCompositeEgress(
             $roomName,

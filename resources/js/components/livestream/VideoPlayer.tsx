@@ -37,32 +37,45 @@ export const VideoPlayer = ({ hlsUrl }: VideoPlayerProps) => {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        // Optimize for low latency
-        maxBufferLength: 5,
-        maxMaxBufferLength: 10,
-        backBufferLength: 3,
-        maxBufferHole: 0.5,
 
-        // === Latency sync (balanced) ===
-        liveSyncDurationCount: 3,     // 2–3 = low delay
-        liveMaxLatencyDurationCount: 6,
+        // Start at live edge (most recent segment)
+        startPosition: -1,
 
-        // === Retry (for stability) ===
-        fragLoadingRetryDelay: 300,
-        fragLoadingMaxRetry: 8,
-        manifestLoadingRetryDelay: 500,
-        manifestLoadingMaxRetry: 8,
-        levelLoadingRetryDelay: 500,
-        levelLoadingMaxRetry: 8,
+        // Ultra-low latency buffer settings
+        maxBufferLength: 4,        // Reduced from 5 for lower latency
+        maxMaxBufferLength: 8,     // Reduced from 10
+        backBufferLength: 2,       // Reduced from 3
+        maxBufferHole: 0.3,        // Reduced from 0.5 for faster recovery
 
-        // faster recovery for broken segments
-        progressive: true, // Speed up to catch live edge
+        // Live sync optimization (aggressive for lowest latency)
+        liveSyncDurationCount: 2,        // Lower = closer to live edge
+        liveMaxLatencyDurationCount: 4,  // Reduced from 6 for tighter sync
+
+        // Fast retry for stability
+        fragLoadingRetryDelay: 200,      // Faster retry
+        fragLoadingMaxRetry: 10,         // More retries
+        manifestLoadingRetryDelay: 300,  // Faster manifest retry
+        manifestLoadingMaxRetry: 10,
+        levelLoadingRetryDelay: 300,
+        levelLoadingMaxRetry: 10,
+
+        // Progressive loading for speed
+        progressive: true,
+
+        // Additional optimizations
+        maxFragLookUpTolerance: 0.1,     // Tighter fragment lookup
+        nudgeMaxRetry: 5,                // More nudge retries for sync
       });
 
       hls.loadSource(hlsUrl);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        // Seek to live edge before playing
+        if (hls.liveSyncPosition !== undefined && hls.liveSyncPosition !== null) {
+          video.currentTime = hls.liveSyncPosition;
+        }
+
         video.play().catch((error) => {
           console.error("Error playing video:", error);
           // Show play prompt if autoplay is blocked
