@@ -92,7 +92,9 @@ const Index = (props: {
 
     channel
       .listen('.ended', (data: { message: string }) => {
-        setStreamEnded(true);
+        setTimeout(() => {
+          setStreamEnded(true);
+        }, 10000);
       });
 
     // Cleanup on unmount

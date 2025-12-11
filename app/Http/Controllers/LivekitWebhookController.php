@@ -78,7 +78,6 @@ class LivekitWebhookController extends Controller
                     's3_path' => $s3PathPrefix . 'live.m3u8',
                 ]);
 
-                Log::info("Started egress {$egressId} for livestream {$livestream->id}");
             } catch (\Exception $e) {
                 Log::error("Failed to start egress for livestream {$livestream->id}: {$e->getMessage()}");
             }
@@ -96,23 +95,18 @@ class LivekitWebhookController extends Controller
         $livestream = LiveStream::where('ingress_id', $ingressId)->first();
 
         if ($livestream) {
-            // Stop egress when ingress ends
             if ($livestream->egress_id) {
                 try {
                     \App\Services\Livekit::stopEgress($livestream->egress_id);
-                    Log::info("Stopped egress {$livestream->egress_id} for livestream {$livestream->id}");
+                    $livestream->update([
+                        'is_active' => false,
+                        'ended_at' => now(),
+                    ]);
+                    event(new \App\Events\LivestreamEnded());
                 } catch (\Exception $e) {
                     Log::error("Failed to stop egress {$livestream->egress_id}: {$e->getMessage()}");
                 }
             }
-
-            $livestream->update([
-                'is_active' => false,
-                'ended_at' => now(),
-            ]);
-
-            // Broadcast livestream ended event
-            event(new \App\Events\LivestreamEnded());
         }
     }
 }
