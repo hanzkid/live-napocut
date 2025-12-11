@@ -29,7 +29,6 @@ class Livekit
         try {
             $egressService->stopEgress($egressId);
         } catch (\Exception $e) {
-            // Egress may already be stopped or not exist
             \Log::warning("Failed to stop egress {$egressId}: {$e->getMessage()}");
         }
     }
@@ -39,7 +38,6 @@ class Livekit
      */
     public static function startEgressForRoom(string $roomName, string $s3Path): string
     {
-        // Configure S3 upload
         $s3 = new S3Upload([
             'access_key' => config('livekit.s3_access_key'),
             'secret' => config('livekit.s3_secret'),
@@ -49,7 +47,6 @@ class Livekit
             'force_path_style' => true,
         ]);
 
-        // Configure HLS segmented output
         $segmentedOutput = new SegmentedFileOutput([
             'filename_prefix' => $s3Path,
             'live_playlist_name' => 'live.m3u8',
@@ -58,7 +55,6 @@ class Livekit
         ]);
         $segmentedOutput->setS3($s3);
 
-        // Start room composite egress
         $egressService = new EgressServiceClient(
             config('livekit.api_url'),
             config('livekit.api_key'),
@@ -66,14 +62,14 @@ class Livekit
         );
 
         $options = new EncodingOptions;
-        $options->preset = EncodingOptionsPreset::PORTRAIT_H264_720P_30;
+        $options->preset = EncodingOptionsPreset::PORTRAIT_H264_1080P_30;
 
         $egress = $egressService->startRoomCompositeEgress(
             $roomName,
-            '',  // Empty layout
+            'single-speaker',
             $segmentedOutput,
-            $options, // Portrait 720p 30fps
-            false // Not audio only
+            $options,
+            false
         );
 
         return $egress->getEgressId();
@@ -87,14 +83,12 @@ class Livekit
             config('livekit.api_secret'),
         );
 
-        // Create room WITHOUT egress - egress will be started via webhook when ingress starts
         $opts = (new RoomCreateOptions)
             ->setName($roomName)
             ->setMetadata(json_encode([]));
 
         $room = $roomService->createRoom($opts);
 
-        // Create RTMP ingress
         $ingressService = new IngressServiceClient(
             config('livekit.api_url'),
             config('livekit.api_key'),
@@ -103,17 +97,17 @@ class Livekit
 
         $ingress = $ingressService->createIngress(
             IngressInput::RTMP_INPUT,
-            $roomName,              // name
-            $roomName,              // roomName
-            'streamer-obs',         // participantIdentity
-            'Streamer (OBS)'        // participantName
+            $roomName,
+            $roomName,
+            'streamer-obs',
+            'Streamer (OBS)'
         );
 
         return [
             'ws_url' => $ingress->getUrl(),
             'stream_key' => $ingress->getStreamKey(),
             'ingress_id' => $ingress->getIngressId(),
-            'egress_id' => null, // Egress will be created via webhook
+            'egress_id' => null,
             's3_path' => null,
         ];
     }
