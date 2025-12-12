@@ -11,13 +11,17 @@ use Livekit\IngressInput;
 use Livekit\S3Upload;
 use Livekit\SegmentedFileOutput;
 use Livekit\SegmentedFileProtocol;
+use Illuminate\Support\Arr;
+
 
 class Livekit
 {
     /**
-     * Stop an existing egress by ID
+     * Stop existing egresses by IDs
+     * 
+     * @param array $egressIds Array of egress IDs to stop
      */
-    public static function stopEgress(string $egressId): void
+    public static function stopEgress(array $egressIds): void
     {
         $egressService = new EgressServiceClient(
             config('livekit.api_url'),
@@ -25,13 +29,36 @@ class Livekit
             config('livekit.api_secret'),
         );
 
-        try {
-            $egressService->stopEgress($egressId);
-        } catch (\Exception $e) {
-            \Log::warning("Failed to stop egress {$egressId}: {$e->getMessage()}");
+        foreach ($egressIds as $id) {
+            try {
+                $egressService->stopEgress($id);
+            } catch (\Exception $e) {
+                \Log::warning("Failed to stop egress {$id}: {$e->getMessage()}");
+            }
         }
     }
 
+    /**
+     * List active egress
+     */
+    public static function listActiveEgressId()
+    {
+        $egressService = new EgressServiceClient(
+            config('livekit.api_url'),
+            config('livekit.api_key'),
+            config('livekit.api_secret'),
+        );
+
+        $listEgress = iterator_to_array($egressService->listEgress('', '', true)->getItems());
+
+        $egressId = [];
+
+        foreach ($listEgress as $egress) {
+            $egressId[] = $egress->getEgressId();
+        }
+
+        return $egressId;
+    }
     /**
      * Start egress for a room with given S3 path
      */
