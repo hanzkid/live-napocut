@@ -192,80 +192,82 @@ const Index = (props: {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-[100dvh] overflow-hidden bg-black">
-      {props.is_active && props.livekit_token && !streamEnded ? (
-        <LiveKitRoom
-          key={props.livekit_token}
-          serverUrl={props.livekit_ws_url}
-          token={props.livekit_token}
-          connect={true}
-          className="relative w-full h-full"
-        >
-          {/* Livestream Title */}
-          {props.room_name && (
-            <div className="absolute top-4 left-0 right-0 z-30 flex justify-center">
-              <h1 className="text-lg font-semibold text-white text-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                {props.room_name}
-              </h1>
+    <div className="fixed inset-0 w-full h-[100dvh] overflow-hidden bg-gray-950">
+      <div className="relative w-full h-full max-w-md mx-auto bg-black">
+        {props.is_active && props.livekit_token && !streamEnded ? (
+          <LiveKitRoom
+            key={props.livekit_token}
+            serverUrl={props.livekit_ws_url}
+            token={props.livekit_token}
+            connect={true}
+            className="relative w-full h-full"
+          >
+            {/* Livestream Title */}
+            {props.room_name && (
+              <div className="absolute top-4 left-0 right-0 z-30 flex justify-center">
+                <h1 className="text-lg font-semibold text-white text-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                  {props.room_name}
+                </h1>
+              </div>
+            )}
+
+            {/* Video Player */}
+            <VideoPlayer hlsUrl={props.hls_url} />
+
+            {/* Chat Overlay */}
+            <div className="absolute bottom-20 left-4 right-4 z-20">
+              <ChatOverlay />
             </div>
-          )}
 
-          {/* Video Player */}
-          <VideoPlayer hlsUrl={props.hls_url} />
+            {/* Chat Input */}
+            <div className="absolute bottom-0 left-0 right-0 z-20">
+              <ChatInput
+                drawerTrigger={
+                  <Button
+                    type="button"
+                    size="icon"
+                    className="h-9 w-9 bg-white/90 hover:bg-white text-black rounded-full flex-shrink-0"
+                    onClick={() => setDrawerOpen(true)}
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                  </Button>
+                }
+                onInputClick={props.is_guest ? handleChatInputClick : undefined}
+                livestreamId={props.livestream_id || undefined}
+              />
+            </div>
 
-          {/* Chat Overlay */}
-          <div className="absolute bottom-20 left-4 right-4 z-20">
-            <ChatOverlay />
-          </div>
-
-          {/* Chat Input */}
-          <div className="absolute bottom-0 left-0 right-0 z-20">
-            <ChatInput
-              drawerTrigger={
-                <Button
-                  type="button"
-                  size="icon"
-                  className="h-9 w-9 bg-white/90 hover:bg-white text-black rounded-full flex-shrink-0"
-                  onClick={() => setDrawerOpen(true)}
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                </Button>
-              }
-              onInputClick={props.is_guest ? handleChatInputClick : undefined}
-              livestreamId={props.livestream_id || undefined}
+            {/* Product Drawer */}
+            <ProductDrawer
+              products={props.products}
+              discountCodes={validDiscountCodes}
+              onProductClick={handleProductClick}
+              open={drawerOpen}
+              onOpenChange={setDrawerOpen}
             />
-          </div>
 
-          {/* Product Drawer */}
-          <ProductDrawer
-            products={props.products}
-            discountCodes={validDiscountCodes}
-            onProductClick={handleProductClick}
-            open={drawerOpen}
-            onOpenChange={setDrawerOpen}
-          />
-
-          {/* Product Bottom Sheet */}
-          <ProductBottomSheet
-            product={selectedProduct}
-            open={productSheetOpen}
-            onOpenChange={handleCloseProductSheet}
-          />
-        </LiveKitRoom>
-      ) : (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-white mb-2">
-              {streamEnded ? "Live Shopping Sudah Berakhir" : "Belum Ada Live Saat Ini"}
-            </h2>
-            <p className="text-white/60">
-              {streamEnded
-                ? "Live shopping sudah selesai, terima kasih sudah menonton!"
-                : "Belum ada live shopping sekarang. Coba cek lagi nanti, ya!"}
-            </p>
+            {/* Product Bottom Sheet */}
+            <ProductBottomSheet
+              product={selectedProduct}
+              open={productSheetOpen}
+              onOpenChange={handleCloseProductSheet}
+            />
+          </LiveKitRoom>
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-white mb-2">
+                {streamEnded ? "Live Shopping Sudah Berakhir" : "Belum Ada Live Saat Ini"}
+              </h2>
+              <p className="text-white/60">
+                {streamEnded
+                  ? "Live shopping sudah selesai, terima kasih sudah menonton!"
+                  : "Belum ada live shopping sekarang. Coba cek lagi nanti, ya!"}
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {showNameDialog && (
         <Dialog open={showNameDialog} onOpenChange={setShowNameDialog}>

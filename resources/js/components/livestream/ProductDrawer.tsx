@@ -184,7 +184,7 @@ export const ProductDrawer = ({
 
                 <div
                     ref={scrollContainerRef}
-                    className="overflow-y-auto pt-1.5 px-3 space-y-2 flex-1"
+                    className="overflow-y-auto pt-1.5 px-3 space-y-2 flex-1 scrollbar-hide"
                     onScroll={handleScroll}
                 >
                     {visibleProducts.map((product) => (

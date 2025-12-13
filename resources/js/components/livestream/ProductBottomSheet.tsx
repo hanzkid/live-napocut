@@ -47,7 +47,7 @@ export const ProductBottomSheet = ({
                     </DrawerClose>
                 </DrawerHeader>
 
-                <div className="overflow-y-auto flex-1">
+                <div className="overflow-y-auto flex-1 scrollbar-hide">
                     {/* Image Gallery */}
                     <div className="relative">
                         <div className="aspect-square bg-white">
