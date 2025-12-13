@@ -8,7 +8,7 @@ import { Head } from "@inertiajs/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, Copy, Check, ExternalLink, Tag } from "lucide-react";
 
 type DiscountCode = {
     code: string;
@@ -76,14 +76,13 @@ const MonitoringChatInput = ({ livestreamId, userName }: { livestreamId: number;
             <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Send message..."
-                className="flex-1 h-9"
+                placeholder="Ketik pesan..."
+                className="flex-1"
             />
             <Button
                 type="submit"
                 size="sm"
                 disabled={!message.trim()}
-                className="h-9 px-3"
             >
                 <Send className="w-4 h-4" />
             </Button>
@@ -91,7 +90,7 @@ const MonitoringChatInput = ({ livestreamId, userName }: { livestreamId: number;
     );
 };
 
-const ChatDisplay = ({ livestreamId }: { livestreamId: number }) => {
+const ChatDisplay = ({ livestreamId, userName }: { livestreamId: number; userName: string }) => {
     const scrollRef = useRef<HTMLDivElement>(null);
     const { chatMessages } = useChat();
     const [persistedMessages, setPersistedMessages] = useState<ChatMessage[]>([]);
@@ -124,13 +123,13 @@ const ChatDisplay = ({ livestreamId }: { livestreamId: number }) => {
 
         // Add persisted messages
         persistedMessages.forEach(msg => {
-            messageMap.set(msg.message + msg.from?.identity + msg.timestamp, msg); // Use timestamp in key for uniqueness
+            messageMap.set(msg.message + msg.from?.identity + msg.timestamp, msg);
         });
 
-        // Add LiveKit messages (they override if same content and sender, but different timestamp)
+        // Add LiveKit messages
         chatMessages.forEach(msg => {
             const key = msg.message + msg.from?.identity + msg.timestamp;
-            if (!messageMap.has(key)) { // Only add if not already present
+            if (!messageMap.has(key)) {
                 messageMap.set(key, msg as ChatMessage);
             }
         });
@@ -148,27 +147,144 @@ const ChatDisplay = ({ livestreamId }: { livestreamId: number }) => {
     return (
         <div
             ref={scrollRef}
-            className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+            className="flex-1 overflow-y-auto p-4 space-y-3"
         >
             {allMessages.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                    <p className="text-sm">No messages yet</p>
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    <p className="text-sm">Belum ada pesan</p>
+                    <p className="text-xs mt-1">Mulai percakapan dengan penonton</p>
                 </div>
             ) : (
-                allMessages.map((msg) => (
-                    <div key={msg.id} className="flex flex-col gap-0.5">
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-sm font-semibold">
-                                {msg.from?.identity || "System"}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                                {new Date(msg.timestamp).toLocaleTimeString()}
-                            </span>
+                allMessages.map((msg) => {
+                    const isAdmin = msg.from?.identity === userName;
+                    return (
+                        <div
+                            key={msg.id}
+                            className={`flex flex-col gap-1 ${isAdmin ? 'items-end' : 'items-start'}`}
+                        >
+                            <div className="flex items-baseline gap-2">
+                                <span className={`text-xs font-semibold ${isAdmin ? 'text-primary' : 'text-foreground'}`}>
+                                    {msg.from?.identity || "System"}
+                                    {isAdmin && (
+                                        <span className="ml-1.5 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                                            Admin
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                    {new Date(msg.timestamp).toLocaleTimeString('id-ID', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </span>
+                            </div>
+                            <div className={`
+                                px-3 py-2 rounded-lg text-sm max-w-[85%]
+                                ${isAdmin
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted text-foreground'
+                                }
+                            `}>
+                                {msg.message}
+                            </div>
                         </div>
-                        <span className="text-sm text-foreground">{msg.message}</span>
-                    </div>
-                ))
+                    );
+                })
             )}
+        </div>
+    );
+};
+
+const DiscountCodeCard = ({ code }: { code: DiscountCode }) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(code.code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div className="p-3 bg-muted/50 rounded-lg border hover:bg-muted transition-colors">
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Tag className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-mono font-bold text-foreground">
+                            {code.code}
+                        </span>
+                    </div>
+                    {code.description && (
+                        <p className="text-xs text-muted-foreground">
+                            {code.description}
+                        </p>
+                    )}
+                    {code.valid_end_date && (
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                            Berlaku hingga {new Date(code.valid_end_date).toLocaleDateString('id-ID')}
+                        </p>
+                    )}
+                </div>
+                <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCopy}
+                    className="h-8 w-8 p-0"
+                >
+                    {copied ? (
+                        <Check className="w-4 h-4 text-green-600" />
+                    ) : (
+                        <Copy className="w-4 h-4" />
+                    )}
+                </Button>
+            </div>
+        </div>
+    );
+};
+
+const ProductCard = ({ product }: { product: Product }) => {
+    return (
+        <div className="flex gap-3 p-3 bg-muted/50 rounded-lg border hover:bg-muted transition-colors group">
+            {/* Product Image */}
+            {product.image && (
+                <div className="relative w-20 h-20 rounded-md overflow-hidden flex-shrink-0 bg-muted">
+                    <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                    />
+                </div>
+            )}
+
+            {/* Product Info */}
+            <div className="flex-1 min-w-0 flex flex-col justify-between">
+                <div>
+                    <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-tight mb-1">
+                        {product.name}
+                    </h3>
+                    {product.category && (
+                        <span className="inline-block text-[10px] text-muted-foreground bg-background px-2 py-0.5 rounded-full mb-1">
+                            {product.category}
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                    <p className="text-sm font-bold text-primary">
+                        {product.formatted_price}
+                    </p>
+                    {product.link && (
+                        <a
+                            href={product.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <ExternalLink className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                        </a>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
@@ -185,6 +301,7 @@ const MonitoringContent = (props: {
     user_name: string;
 }) => {
     const [streamEnded, setStreamEnded] = useState(false);
+    const [activeTab, setActiveTab] = useState<'products' | 'discounts'>('products');
 
     // Set up Laravel Echo connection for livestream status updates
     useEffect(() => {
@@ -198,7 +315,6 @@ const MonitoringContent = (props: {
             setStreamEnded(true);
         });
 
-        // Cleanup on unmount
         return () => {
             window.Echo.leave("livestream-status");
         };
@@ -209,12 +325,12 @@ const MonitoringContent = (props: {
             <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                     <h2 className="text-2xl font-bold mb-2">
-                        {streamEnded ? "Livestream Ended" : "No Active Livestream"}
+                        {streamEnded ? "Livestream Berakhir" : "Tidak Ada Livestream Aktif"}
                     </h2>
-                    <p className="">
+                    <p className="text-muted-foreground">
                         {streamEnded
-                            ? "The livestream has ended."
-                            : "There is no active livestream at the moment."}
+                            ? "Livestream telah berakhir. Terima kasih!"
+                            : "Belum ada livestream yang sedang berlangsung."}
                     </p>
                 </div>
             </div>
@@ -230,80 +346,69 @@ const MonitoringContent = (props: {
             className="flex h-full gap-4 p-4"
         >
             {/* Left Column - Products & Discount Codes */}
-            <div className="w-[450px] flex flex-col gap-4 overflow-y-auto">
-                {/* Products Section */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Products</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3 max-h-[50vh] overflow-y-auto">
-                        {props.products.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-4">No products</p>
-                        ) : (
-                            props.products.map((product) => (
-                                <div
-                                    key={product.id}
-                                    className="flex gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
-                                >
-                                    {product.image && (
-                                        <img
-                                            src={product.image}
-                                            alt={product.name}
-                                            className="w-16 h-16 object-cover rounded"
-                                        />
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-sm font-semibold truncate">
-                                            {product.name}
-                                        </h3>
-                                        <p className="text-sm font-medium text-primary">
-                                            {product.formatted_price}
-                                        </p>
-                                        {product.category && (
-                                            <p className="text-xs text-muted-foreground">{product.category}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </CardContent>
-                </Card>
+            <div className="w-[380px] flex flex-col overflow-hidden">
+                {/* Tab Navigation */}
+                <div className="flex gap-1 p-1 bg-muted/50 rounded-lg mb-4">
+                    <button
+                        onClick={() => setActiveTab('products')}
+                        className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'products'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                    >
+                        Produk
+                        <span className="ml-1.5 text-xs">({props.products.length})</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('discounts')}
+                        className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'discounts'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                    >
+                        Kode Diskon
+                        <span className="ml-1.5 text-xs">({props.discountCodes.length})</span>
+                    </button>
+                </div>
 
-                {/* Discount Codes Section */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Discount Codes</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                        {props.discountCodes.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-4">No discount codes</p>
-                        ) : (
-                            props.discountCodes.map((code, index) => (
-                                <div
-                                    key={index}
-                                    className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 rounded-lg border border-blue-100 dark:border-blue-900"
-                                >
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="font-mono font-bold text-primary">
-                                            {code.code}
-                                        </span>
-                                    </div>
-                                    {code.description && (
-                                        <p className="text-xs text-muted-foreground">{code.description}</p>
-                                    )}
+                {/* Tab Content */}
+                <div className="flex-1 overflow-y-auto pr-2">
+                    {activeTab === 'products' ? (
+                        <div className="space-y-2">
+                            {props.products.length === 0 ? (
+                                <div className="text-center py-16 bg-muted/30 rounded-lg border border-dashed">
+                                    <Tag className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
+                                    <p className="text-sm text-muted-foreground">Belum ada produk</p>
                                 </div>
-                            ))
-                        )}
-                    </CardContent>
-                </Card>
+                            ) : (
+                                props.products.map((product) => (
+                                    <ProductCard key={product.id} product={product} />
+                                ))
+                            )}
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {props.discountCodes.length === 0 ? (
+                                <div className="text-center py-16 bg-muted/30 rounded-lg border border-dashed">
+                                    <Tag className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
+                                    <p className="text-sm text-muted-foreground">Belum ada kode diskon</p>
+                                </div>
+                            ) : (
+                                props.discountCodes.map((code, index) => (
+                                    <DiscountCodeCard key={index} code={code} />
+                                ))
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Center Column - Video Player */}
-            <div className="flex-1 relative bg-gray-900 flex items-center justify-center rounded-lg overflow-hidden">
+            <div className="flex-1 relative bg-black flex items-center justify-center rounded-lg overflow-hidden">
                 {/* Livestream Title */}
                 {props.room_name && (
-                    <div className="absolute top-4 left-0 right-0 z-30 flex justify-center">
-                        <h1 className="text-lg font-semibold text-white text-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full">
+                    <div className="absolute top-4 left-0 right-0 z-30 flex justify-center px-4">
+                        <h1 className="text-lg font-semibold text-white text-center drop-shadow-lg bg-black/50 backdrop-blur-sm px-4 py-2 rounded-lg">
                             {props.room_name}
                         </h1>
                     </div>
@@ -316,15 +421,17 @@ const MonitoringContent = (props: {
             </div>
 
             {/* Right Column - Chat */}
-            <div className="w-96 flex flex-col overflow-hidden">
+            <div className="w-[360px] flex flex-col overflow-hidden">
                 <Card className="flex-1 flex flex-col">
-                    <CardHeader>
-                        <CardTitle>Live Chat</CardTitle>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base">
+                            Chat Langsung
+                        </CardTitle>
                     </CardHeader>
-                    <CardContent className="flex-1 flex flex-col p-0">
+                    <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
                         {/* Chat Messages */}
-                        <div className="flex-1">
-                            <ChatDisplay livestreamId={props.livestream_id || 0} />
+                        <div className="flex-1 overflow-hidden">
+                            <ChatDisplay livestreamId={props.livestream_id || 0} userName={props.user_name} />
                         </div>
 
                         {/* Chat Input */}
@@ -352,7 +459,6 @@ const Index = (props: {
     livestream_id: number | null;
     user_name: string;
 }) => {
-
     return (
         <AppLayout>
             <Head title="Monitoring Livestream" />
