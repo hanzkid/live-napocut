@@ -26,3 +26,4 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+s3-cleanup.env
