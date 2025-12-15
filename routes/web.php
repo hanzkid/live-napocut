@@ -41,3 +41,5 @@ Route::post('live', [FrontController::class, 'joinLivestream'])->name('join-live
 // Livestream messages API
 Route::post('/api/livestream-messages', [LivestreamMessageController::class, 'store'])->name('livestream-messages.store');
 Route::get('/api/livestream-messages/{livestream}', [LivestreamMessageController::class, 'index'])->name('livestream-messages.index');
+
+Route::get('/api/livestreams/active', [FrontController::class, 'activeLivestream'])->name('livestreams.active');

@@ -144,4 +144,13 @@ class FrontController extends Controller
 
         return back();
     }
+
+    public function activeLivestream()
+    {
+        $livestream = LiveStream::where('is_active', true)
+            ->latest()
+            ->first();
+
+        return response()->json($livestream);
+    }
 }

@@ -172,7 +172,11 @@ const ChatDisplay = ({ livestreamId, userName }: { livestreamId: number; userNam
                                     )}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground">
-                                    {new Date(msg.timestamp).toLocaleTimeString('id-ID', {
+                                    {new Date(msg.timestamp).toLocaleDateString('id-ID', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric'
+                                    })} {new Date(msg.timestamp).toLocaleTimeString('id-ID', {
                                         hour: '2-digit',
                                         minute: '2-digit'
                                     })}
@@ -352,8 +356,8 @@ const MonitoringContent = (props: {
                     <button
                         onClick={() => setActiveTab('products')}
                         className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'products'
-                                ? 'bg-background text-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
                             }`}
                     >
                         Produk
@@ -362,8 +366,8 @@ const MonitoringContent = (props: {
                     <button
                         onClick={() => setActiveTab('discounts')}
                         className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'discounts'
-                                ? 'bg-background text-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
                             }`}
                     >
                         Kode Diskon
@@ -462,7 +466,7 @@ const Index = (props: {
     return (
         <AppLayout>
             <Head title="Monitoring Livestream" />
-            <div className="h-[calc(100vh-4rem)] overflow-hidden">
+            <div className="min-h-[calc(100vh-4rem)] overflow-hidden">
                 <MonitoringContent
                     livekit_ws_url={props.livekit_ws_url}
                     livekit_token={props.livekit_token}
