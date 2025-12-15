@@ -40,6 +40,11 @@ AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-${LIVEKIT_S3_REGION:-}}"
 S3_BUCKET="${S3_BUCKET:-${LIVEKIT_S3_BUCKET:-}}"
 S3_ENDPOINT="${S3_ENDPOINT:-${LIVEKIT_S3_ENDPOINT:-}}"
 
+# Export AWS credentials for AWS CLI
+export AWS_ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY
+export AWS_DEFAULT_REGION
+
 # DRY_RUN=true|1 (case-insensitive) enables dry run
 DRY_RUN="${DRY_RUN:-false}"
 DRY_RUN_LOWER=$(echo "${DRY_RUN}" | tr '[:upper:]' '[:lower:]')
@@ -58,6 +63,11 @@ if [ -n "${S3_ENDPOINT}" ]; then
     export AWS_ENDPOINT_URL="${S3_ENDPOINT}"
 fi
 
+# Validate AWS credentials are set
+if [ -z "${AWS_ACCESS_KEY_ID}" ] || [ -z "${AWS_SECRET_ACCESS_KEY}" ]; then
+    fail "AWS credentials (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) are required. Set them in s3-cleanup.env or as environment variables."
+fi
+
 #
 # Fetch active livestream
 #
@@ -65,37 +75,26 @@ fi
 log "Fetching active livestream from ${BASE_URL}/api/livestreams/active..."
 RESPONSE=$(curl -s "${BASE_URL}/api/livestreams/active" || echo "")
 
-if [ -z "${RESPONSE}" ] || [ "${RESPONSE}" = "null" ]; then
-    log "No active livestream found. Nothing to clean up."
-    exit 0
+# Check if we have an active livestream with s3_path
+ACTIVE_DIR=""
+if [ -n "${RESPONSE}" ] && [ "${RESPONSE}" != "null" ]; then
+    S3_PATH=$(echo "${RESPONSE}" | grep -o '"s3_path":"[^"]*"' | sed 's/"s3_path":"\([^"]*\)"/\1/' || echo "")
+    
+    if [ -n "${S3_PATH}" ] && ! echo "${RESPONSE}" | grep -q '"s3_path":null'; then
+        log "Found s3_path: ${S3_PATH}"
+        ACTIVE_DIR=$(echo "${S3_PATH}" | sed 's|/[^/]*$|/|')
+        
+        if [ -n "${ACTIVE_DIR}" ] && [ "${ACTIVE_DIR}" != "/" ]; then
+            log "Active S3 directory (to keep): ${ACTIVE_DIR}"
+        else
+            ACTIVE_DIR=""
+        fi
+    fi
 fi
 
-#
-# Extract s3_path from JSON response using grep/sed
-# Handles both "s3_path":"value" and "s3_path":null
-#
-
-S3_PATH=$(echo "${RESPONSE}" | grep -o '"s3_path":"[^"]*"' | sed 's/"s3_path":"\([^"]*\)"/\1/' || echo "")
-
-if [ -z "${S3_PATH}" ] || echo "${RESPONSE}" | grep -q '"s3_path":null'; then
-    log "No s3_path found in response or s3_path is null. Nothing to clean up."
-    exit 0
+if [ -z "${ACTIVE_DIR}" ]; then
+    log "No active livestream found. Will clean up ALL directories."
 fi
-
-log "Found s3_path: ${S3_PATH}"
-
-#
-# Derive the active directory prefix we want to keep
-# Example: "1-randomstring/live.m3u8" -> "1-randomstring/"
-#
-
-ACTIVE_DIR=$(echo "${S3_PATH}" | sed 's|/[^/]*$|/|')
-
-if [ -z "${ACTIVE_DIR}" ] || [ "${ACTIVE_DIR}" = "/" ]; then
-    fail "Invalid s3_path format. Cannot extract directory."
-fi
-
-log "Active S3 directory (to keep): ${ACTIVE_DIR}"
 
 if [ -z "${S3_BUCKET}" ]; then
     fail "S3_BUCKET is not set. Aborting cleanup."
@@ -119,7 +118,7 @@ if [ -z "${DIRS}" ]; then
 fi
 
 #
-# Iterate all top-level dirs and delete everything except ACTIVE_DIR
+# Iterate all top-level dirs and delete everything except ACTIVE_DIR (if set)
 #
 
 for DIR in ${DIRS}; do
@@ -128,7 +127,8 @@ for DIR in ${DIRS}; do
         DIR="${DIR}/"
     fi
 
-    if [ "${DIR}" = "${ACTIVE_DIR}" ]; then
+    # Skip active directory if we have one
+    if [ -n "${ACTIVE_DIR}" ] && [ "${DIR}" = "${ACTIVE_DIR}" ]; then
         log "Skipping active directory: ${DIR}"
         continue
     fi
@@ -158,5 +158,9 @@ for DIR in ${DIRS}; do
     fi
 done
 
-log "Cleanup complete. Kept directory: s3://${S3_BUCKET}/${ACTIVE_DIR}"
+if [ -n "${ACTIVE_DIR}" ]; then
+    log "Cleanup complete. Kept directory: s3://${S3_BUCKET}/${ACTIVE_DIR}"
+else
+    log "Cleanup complete. All directories deleted (no active livestream)."
+fi
 

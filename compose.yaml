@@ -90,6 +90,26 @@ services:
             - redis
         command: php artisan schedule:work
         restart: unless-stopped
+    s3-cleanup:
+        image: amazon/aws-cli:latest
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        env_file:
+            - ./s3-cleanup.env
+        environment:
+            # Comes from main app / Docker env
+            BASE_URL: '${APP_URL:-http://app:8080}'
+            # Optional global override for interval (can also be set in s3-cleanup.env)
+            CLEANUP_INTERVAL: '${CLEANUP_INTERVAL:-3600}'
+        volumes:
+            - './scripts/s3-cleanup.sh:/s3-cleanup.sh:ro'
+            - './scripts/s3-cleanup-wrapper.sh:/s3-cleanup-wrapper.sh:ro'
+        networks:
+            - sail
+        depends_on:
+            - laravel.test
+        entrypoint: ['/bin/sh', '/s3-cleanup-wrapper.sh']
+        restart: unless-stopped
     mariadb:
         image: 'mariadb:11'
         ports:

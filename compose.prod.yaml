@@ -112,19 +112,12 @@ services:
             CLEANUP_INTERVAL: '${CLEANUP_INTERVAL:-3600}'
         volumes:
             - './scripts/s3-cleanup.sh:/s3-cleanup.sh:ro'
+            - './scripts/s3-cleanup-wrapper.sh:/s3-cleanup-wrapper.sh:ro'
         networks:
             - sail
         depends_on:
             - app
-        command: >
-            sh -c "
-            yum install -y curl 2>/dev/null || (apt-get update && apt-get install -y curl 2>/dev/null) || apk add --no-cache curl 2>/dev/null || true;
-            chmod +x /s3-cleanup.sh;
-            while true; do
-                /s3-cleanup.sh || echo 'Cleanup failed, will retry on next interval';
-                sleep $${CLEANUP_INTERVAL:-3600};
-            done
-            "
+        entrypoint: ['/bin/sh', '/s3-cleanup-wrapper.sh']
         restart: unless-stopped
     mariadb:
         image: 'mariadb:11'
