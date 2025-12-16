@@ -356,7 +356,11 @@ const MonitoringContent = (props: {
     const hasUserReorderedRef = useRef(false);
 
     const sensors = useSensors(
-        useSensor(PointerSensor),
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8, // Require 8px movement before drag starts (allows scrolling)
+            },
+        }),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
         })
@@ -508,29 +512,29 @@ const MonitoringContent = (props: {
                 {/* Tab Content */}
                 <div className="flex-1 overflow-y-auto pr-2">
                     {activeTab === 'products' ? (
-                        <div className="space-y-2">
-                            {products.length === 0 ? (
-                                <div className="text-center py-16 bg-muted/30 rounded-lg border border-dashed">
-                                    <Tag className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-                                    <p className="text-sm text-muted-foreground">Belum ada produk</p>
-                                </div>
-                            ) : (
-                                <DndContext
-                                    sensors={sensors}
-                                    collisionDetection={closestCenter}
-                                    onDragEnd={handleDragEnd}
+                        products.length === 0 ? (
+                            <div className="text-center py-16 bg-muted/30 rounded-lg border border-dashed">
+                                <Tag className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
+                                <p className="text-sm text-muted-foreground">Belum ada produk</p>
+                            </div>
+                        ) : (
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <SortableContext
+                                    items={products.map((p) => p.id)}
+                                    strategy={verticalListSortingStrategy}
                                 >
-                                    <SortableContext
-                                        items={products.map((p) => p.id)}
-                                        strategy={verticalListSortingStrategy}
-                                    >
+                                    <div className="space-y-2">
                                         {products.map((product) => (
                                             <SortableProductCard key={product.id} product={product} />
                                         ))}
-                                    </SortableContext>
-                                </DndContext>
-                            )}
-                        </div>
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
+                        )
                     ) : (
                         <div className="space-y-2">
                             {props.discountCodes.length === 0 ? (
@@ -607,7 +611,7 @@ const Index = (props: {
     return (
         <AppLayout>
             <Head title="Monitoring Livestream" />
-            <div className="min-h-[calc(100vh-4rem)] overflow-hidden">
+            <div className="h-[calc(100vh-4rem)] overflow-hidden">
                 <MonitoringContent
                     livekit_ws_url={props.livekit_ws_url}
                     livekit_token={props.livekit_token}
