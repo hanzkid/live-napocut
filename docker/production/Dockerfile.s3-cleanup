@@ -1,0 +1,12 @@
+FROM amazon/aws-cli:latest
+
+# Copy cleanup scripts
+COPY scripts/s3-cleanup.sh /s3-cleanup.sh
+COPY scripts/s3-cleanup-wrapper.sh /s3-cleanup-wrapper.sh
+
+# Make scripts executable
+RUN chmod +x /s3-cleanup.sh /s3-cleanup-wrapper.sh
+
+# Set entrypoint
+ENTRYPOINT ["/bin/sh", "/s3-cleanup-wrapper.sh"]
+
