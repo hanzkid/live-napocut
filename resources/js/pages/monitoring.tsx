@@ -8,7 +8,24 @@ import { Head } from "@inertiajs/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Copy, Check, ExternalLink, Tag } from "lucide-react";
+import { Send, Copy, Check, ExternalLink, Tag, GripVertical } from "lucide-react";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type DiscountCode = {
     code: string;
@@ -246,9 +263,37 @@ const DiscountCodeCard = ({ code }: { code: DiscountCode }) => {
     );
 };
 
-const ProductCard = ({ product }: { product: Product }) => {
+const SortableProductCard = ({ product }: { product: Product }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: product.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
     return (
-        <div className="flex gap-3 p-3 bg-muted/50 rounded-lg border hover:bg-muted transition-colors group">
+        <div
+            ref={setNodeRef}
+            style={style}
+            className="flex gap-3 p-3 bg-muted/50 rounded-lg border hover:bg-muted transition-colors group"
+        >
+            {/* Drag Handle */}
+            <div
+                {...attributes}
+                {...listeners}
+                className="flex items-center cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
+            >
+                <GripVertical className="w-5 h-5" />
+            </div>
+
             {/* Product Image */}
             {product.image && (
                 <div className="relative w-20 h-20 rounded-md overflow-hidden flex-shrink-0 bg-muted">
@@ -306,6 +351,54 @@ const MonitoringContent = (props: {
 }) => {
     const [streamEnded, setStreamEnded] = useState(false);
     const [activeTab, setActiveTab] = useState<'products' | 'discounts'>('products');
+    const [products, setProducts] = useState<Product[]>(props.products);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    // Update products when props change
+    useEffect(() => {
+        setProducts(props.products);
+    }, [props.products]);
+
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            const oldIndex = products.findIndex((p) => p.id === active.id);
+            const newIndex = products.findIndex((p) => p.id === over.id);
+
+            const oldProducts = [...products];
+            const newProducts = arrayMove(products, oldIndex, newIndex);
+            setProducts(newProducts);
+
+            // Update order on server
+            try {
+                const response = await fetch('/products/reorder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                    body: JSON.stringify({
+                        product_ids: newProducts.map((p) => p.id),
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update product order');
+                }
+            } catch (error) {
+                console.error('Failed to update product order:', error);
+                // Revert on error
+                setProducts(oldProducts);
+            }
+        }
+    };
 
     // Set up Laravel Echo connection for livestream status updates
     useEffect(() => {
@@ -361,7 +454,7 @@ const MonitoringContent = (props: {
                             }`}
                     >
                         Produk
-                        <span className="ml-1.5 text-xs">({props.products.length})</span>
+                        <span className="ml-1.5 text-xs">({products.length})</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('discounts')}
@@ -379,15 +472,26 @@ const MonitoringContent = (props: {
                 <div className="flex-1 overflow-y-auto pr-2">
                     {activeTab === 'products' ? (
                         <div className="space-y-2">
-                            {props.products.length === 0 ? (
+                            {products.length === 0 ? (
                                 <div className="text-center py-16 bg-muted/30 rounded-lg border border-dashed">
                                     <Tag className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
                                     <p className="text-sm text-muted-foreground">Belum ada produk</p>
                                 </div>
                             ) : (
-                                props.products.map((product) => (
-                                    <ProductCard key={product.id} product={product} />
-                                ))
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <SortableContext
+                                        items={products.map((p) => p.id)}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        {products.map((product) => (
+                                            <SortableProductCard key={product.id} product={product} />
+                                        ))}
+                                    </SortableContext>
+                                </DndContext>
                             )}
                         </div>
                     ) : (

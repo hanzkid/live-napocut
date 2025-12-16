@@ -20,6 +20,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('products/toggle-all-visibility', [ProductController::class, 'toggleAllVisibility'])->name('products.toggle-all-visibility');
     Route::patch('products/toggle-selected-visibility', [ProductController::class, 'toggleSelectedVisibility'])->name('products.toggle-selected-visibility');
     Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility'])->name('products.toggle-visibility');
+    Route::post('products/reorder', [ProductController::class, 'reorder'])->name('products.reorder');
     Route::resource('products', ProductController::class);
     Route::get('products-search', [ProductController::class, 'search'])->name('products.search');
     Route::post('products/import-from-url', [ProductController::class, 'importFromUrl'])->name('products.import-from-url');

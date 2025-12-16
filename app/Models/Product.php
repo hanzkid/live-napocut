@@ -15,6 +15,7 @@ class Product extends Model
         'link',
         'category_id',
         'is_show',
+        'order',
     ];
 
     protected $casts = [

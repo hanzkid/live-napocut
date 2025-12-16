@@ -74,6 +74,8 @@ class AdminController extends Controller
 
         $rawProducts = Product::where('is_show', true)
             ->with(['images', 'category'])
+            ->orderBy('order')
+            ->orderBy('id')
             ->get();
 
         $hlsUrl = null;

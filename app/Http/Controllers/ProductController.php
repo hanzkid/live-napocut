@@ -21,6 +21,8 @@ class ProductController extends Controller
     {
         $rawProducts = Product::where('is_show', true)
             ->with(['images', 'category'])
+            ->orderBy('order')
+            ->orderBy('id')
             ->get();
 
         return $rawProducts->map(function ($product) {
@@ -429,5 +431,22 @@ class ProductController extends Controller
         return redirect()
             ->back()
             ->with('success', $message);
+    }
+
+    public function reorder(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'product_ids' => ['required', 'array'],
+            'product_ids.*' => ['integer', 'exists:products,id'],
+        ]);
+
+        foreach ($validated['product_ids'] as $index => $productId) {
+            Product::where('id', $productId)->update(['order' => $index]);
+        }
+
+        // Broadcast product updates
+        $this->broadcastProductsUpdate();
+
+        return response()->json(['success' => true, 'message' => 'Product order updated successfully.']);
     }
 }
