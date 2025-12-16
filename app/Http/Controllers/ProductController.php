@@ -43,11 +43,20 @@ class ProductController extends Controller
 
     /**
      * Broadcast product updates to all connected clients.
+     * Sends lightweight signal - clients will refetch via API.
      */
     private function broadcastProductsUpdate(): void
     {
+        event(new ProductsUpdated());
+    }
+
+    /**
+     * API endpoint to fetch products for livestream.
+     */
+    public function apiIndex(): \Illuminate\Http\JsonResponse
+    {
         $products = $this->formatProductsForLivestream();
-        event(new ProductsUpdated($products));
+        return response()->json(['products' => $products]);
     }
 
     public function index(): Response
@@ -444,7 +453,7 @@ class ProductController extends Controller
             Product::where('id', $productId)->update(['order' => $index]);
         }
 
-        // Broadcast product updates
+        // Broadcast lightweight signal - clients will refetch via API
         $this->broadcastProductsUpdate();
 
         return response()->json(['success' => true, 'message' => 'Product order updated successfully.']);

@@ -100,8 +100,17 @@ const Index = (props: {
     const channel = window.Echo.channel('products');
 
     channel
-      .listen('.updated', (data: { products: Product[] }) => {
-        setProducts(data.products);
+      .listen('.updated', async () => {
+        // Refetch products from API when update signal is received
+        try {
+          const response = await fetch('/api/products');
+          if (response.ok) {
+            const data = await response.json();
+            setProducts(data.products);
+          }
+        } catch (error) {
+          console.error('Failed to fetch updated products:', error);
+        }
       });
 
     // Cleanup on unmount

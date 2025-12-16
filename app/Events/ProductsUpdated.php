@@ -12,14 +12,12 @@ class ProductsUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $products;
-
     /**
      * Create a new event instance.
      */
-    public function __construct(array $products)
+    public function __construct()
     {
-        $this->products = $products;
+        // No data needed - clients will refetch via API
     }
 
     /**
@@ -39,12 +37,12 @@ class ProductsUpdated implements ShouldBroadcastNow
     }
 
     /**
-     * Get the data to broadcast.
+     * Get the data to broadcast - lightweight signal only.
      */
     public function broadcastWith(): array
     {
         return [
-            'products' => $this->products,
+            'message' => 'products_updated',
         ];
     }
 }

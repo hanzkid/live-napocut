@@ -352,6 +352,8 @@ const MonitoringContent = (props: {
     const [streamEnded, setStreamEnded] = useState(false);
     const [activeTab, setActiveTab] = useState<'products' | 'discounts'>('products');
     const [products, setProducts] = useState<Product[]>(props.products);
+    const productsRef = useRef<Product[]>(props.products);
+    const hasUserReorderedRef = useRef(false);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -360,9 +362,39 @@ const MonitoringContent = (props: {
         })
     );
 
-    // Update products when props change
+    // Initialize ref on mount
     useEffect(() => {
-        setProducts(props.products);
+        productsRef.current = props.products;
+    }, []);
+
+    // Update products when props change, but always preserve order when products are the same
+    useEffect(() => {
+        // Check if products are the same (same IDs), just potentially reordered
+        const currentIds = productsRef.current.map(p => p.id).sort().join(',');
+        const newIds = props.products.map(p => p.id).sort().join(',');
+        
+        // If same products (same IDs) and user has reordered, always preserve our local order
+        // This prevents the order from being reset when broadcasts or prop updates happen
+        if (currentIds === newIds && 
+            productsRef.current.length > 0 && 
+            productsRef.current.length === props.products.length &&
+            hasUserReorderedRef.current) {
+            // Keep current order, but update any changed product data
+            const updatedProducts = productsRef.current.map(currentProduct => {
+                const updatedProduct = props.products.find(p => p.id === currentProduct.id);
+                return updatedProduct ? { ...currentProduct, ...updatedProduct } : currentProduct;
+            });
+            setProducts(updatedProducts);
+            productsRef.current = updatedProducts;
+        } else {
+            // New products or different products, or first load, update normally
+            setProducts(props.products);
+            productsRef.current = props.products;
+            // Reset the flag if products actually changed (not just reordered)
+            if (currentIds !== newIds) {
+                hasUserReorderedRef.current = false;
+            }
+        }
     }, [props.products]);
 
     const handleDragEnd = async (event: DragEndEvent) => {
@@ -375,15 +407,18 @@ const MonitoringContent = (props: {
             const oldProducts = [...products];
             const newProducts = arrayMove(products, oldIndex, newIndex);
             setProducts(newProducts);
+            productsRef.current = newProducts;
+            hasUserReorderedRef.current = true; // Mark that user has reordered
 
             // Update order on server
             try {
-                const response = await fetch('/products/reorder', {
+                const response = await fetch('/api/products/reorder', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'Accept': 'application/json',
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({
                         product_ids: newProducts.map((p) => p.id),
                     }),
@@ -396,6 +431,8 @@ const MonitoringContent = (props: {
                 console.error('Failed to update product order:', error);
                 // Revert on error
                 setProducts(oldProducts);
+                productsRef.current = oldProducts;
+                hasUserReorderedRef.current = false;
             }
         }
     };
