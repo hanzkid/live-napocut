@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ProductsUpdated;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\ProductImportService;
@@ -13,6 +14,40 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
+    /**
+     * Format products for livestream (same format as FrontController).
+     */
+    private function formatProductsForLivestream(): array
+    {
+        $rawProducts = Product::where('is_show', true)
+            ->with(['images', 'category'])
+            ->get();
+
+        return $rawProducts->map(function ($product) {
+            return [
+                'id' => (string) $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+                'formatted_price' => $product->formatted_price,
+                'plain_price' => $product->plain_price,
+                'description' => $product->description,
+                'link' => $product->link,
+                'category' => $product->category?->name,
+                'image' => $product->images->first()?->url ?? '',
+                'images' => $product->images->map(fn ($img) => $img->url)->toArray(),
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Broadcast product updates to all connected clients.
+     */
+    private function broadcastProductsUpdate(): void
+    {
+        $products = $this->formatProductsForLivestream();
+        event(new ProductsUpdated($products));
+    }
+
     public function index(): Response
     {
         $products = Product::with(['images', 'category'])
@@ -175,6 +210,9 @@ class ProductController extends Controller
             }
         }
 
+        // Broadcast product updates
+        $this->broadcastProductsUpdate();
+
         return redirect()
             ->route('products.index')
             ->with('success', 'Product created successfully.');
@@ -217,6 +255,9 @@ class ProductController extends Controller
             }
         }
 
+        // Broadcast product updates
+        $this->broadcastProductsUpdate();
+
         return redirect()
             ->route('products.index')
             ->with('success', 'Product updated successfully.');
@@ -232,6 +273,9 @@ class ProductController extends Controller
         }
 
         $product->delete();
+
+        // Broadcast product updates
+        $this->broadcastProductsUpdate();
 
         return redirect()
             ->route('products.index')
@@ -266,6 +310,9 @@ class ProductController extends Controller
                 ]);
             }
 
+            // Broadcast product updates
+            $this->broadcastProductsUpdate();
+
             return redirect()
                 ->route('products.index')
                 ->with('success', 'Product imported successfully from URL.');
@@ -298,6 +345,9 @@ class ProductController extends Controller
                 ]);
             }
 
+            // Broadcast product updates
+            $this->broadcastProductsUpdate();
+
             return redirect()->back()->with('success', 'Images uploaded successfully.');
         } catch (\Exception $e) {
             \Log::error('Image upload failed', [
@@ -318,6 +368,9 @@ class ProductController extends Controller
 
         $image->delete();
 
+        // Broadcast product updates
+        $this->broadcastProductsUpdate();
+
         return back()->with('success', 'Image deleted successfully.');
     }
 
@@ -325,6 +378,9 @@ class ProductController extends Controller
     {
         $product->is_show = ! $product->is_show;
         $product->save();
+
+        // Broadcast product updates
+        $this->broadcastProductsUpdate();
 
         return redirect()
             ->back()
@@ -338,6 +394,9 @@ class ProductController extends Controller
         ]);
 
         Product::query()->update(['is_show' => $validated['visible']]);
+
+        // Broadcast product updates
+        $this->broadcastProductsUpdate();
 
         $message = $validated['visible']
             ? 'All products are now visible.'
@@ -358,6 +417,9 @@ class ProductController extends Controller
 
         Product::whereIn('id', $validated['product_ids'])
             ->update(['is_show' => $validated['visible']]);
+
+        // Broadcast product updates
+        $this->broadcastProductsUpdate();
 
         $count = count($validated['product_ids']);
         $message = $validated['visible']

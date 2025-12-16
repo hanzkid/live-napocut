@@ -50,7 +50,7 @@ const Index = (props: {
   const [showNameDialog, setShowNameDialog] = useState(false);
   const [validDiscountCodes, setValidDiscountCodes] = useState<DiscountCode[]>([]);
   const [streamEnded, setStreamEnded] = useState(false);
-
+  const [products, setProducts] = useState<Product[]>(props.products);
 
   // Initialize discount codes from props
   useEffect(() => {
@@ -58,6 +58,11 @@ const Index = (props: {
       setValidDiscountCodes(props.discountCodes);
     }
   }, [props.discountCodes]);
+
+  // Initialize products from props
+  useEffect(() => {
+    setProducts(props.products);
+  }, [props.products]);
 
   // Set up Laravel Echo connection for real-time discount code updates
   useEffect(() => {
@@ -79,6 +84,29 @@ const Index = (props: {
     // Cleanup on unmount
     return () => {
       window.Echo.leave('discount-codes');
+    };
+  }, [props.is_active]);
+
+  // Set up Laravel Echo connection for real-time product updates
+  useEffect(() => {
+    if (!props.is_active) {
+      return;
+    }
+
+    if (typeof window === 'undefined' || !window.Echo) {
+      return;
+    }
+
+    const channel = window.Echo.channel('products');
+
+    channel
+      .listen('.updated', (data: { products: Product[] }) => {
+        setProducts(data.products);
+      });
+
+    // Cleanup on unmount
+    return () => {
+      window.Echo.leave('products');
     };
   }, [props.is_active]);
 
@@ -239,7 +267,7 @@ const Index = (props: {
 
             {/* Product Drawer */}
             <ProductDrawer
-              products={props.products}
+              products={products}
               discountCodes={validDiscountCodes}
               onProductClick={handleProductClick}
               open={drawerOpen}

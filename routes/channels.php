@@ -10,3 +10,8 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 Broadcast::channel('discount-codes', function () {
     return true;
 });
+
+// Public channel for products
+Broadcast::channel('products', function () {
+    return true;
+});
