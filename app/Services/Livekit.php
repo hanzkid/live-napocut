@@ -8,11 +8,16 @@ use Agence104\LiveKit\RoomCreateOptions;
 use Agence104\LiveKit\RoomServiceClient;
 use Livekit\EncodingOptions;
 use Livekit\IngressInput;
+use Livekit\IngressAudioEncodingOptions;
+use Livekit\IngressAudioOptions;
+use Livekit\IngressVideoEncodingOptions;
+use Livekit\IngressVideoOptions;
+use Livekit\VideoCodec;
+use Livekit\AudioCodec;
+use Livekit\VideoLayer;
 use Livekit\S3Upload;
 use Livekit\SegmentedFileOutput;
 use Livekit\SegmentedFileProtocol;
-use Illuminate\Support\Arr;
-
 
 class Livekit
 {
@@ -91,11 +96,11 @@ class Livekit
         $options = new EncodingOptions;
         $options->setWidth(1080);           // Portrait width
         $options->setHeight(1920);          // Portrait height (1080p)
-        $options->setVideoBitrate(8000);    // 8 Mbps for high quality
+        $options->setVideoBitrate(6000);    // 6 Mbps for high quality
         $options->setAudioBitrate(256);     // 256 kbps for high quality audio
         $options->setAudioFrequency(48000); // 48 kHz audio
-        $options->setVideoCodec(\Livekit\VideoCodec::H264_HIGH); // H264 High profile
-        $options->setAudioCodec(\Livekit\AudioCodec::AAC); // AAC required for HLS
+        $options->setVideoCodec(VideoCodec::H264_HIGH); // H264 High profile
+        $options->setAudioCodec(AudioCodec::AAC); // AAC required for HLS
         $options->setFramerate(30);         // 30 fps
 
         $egress = $egressService->startRoomCompositeEgress(
@@ -129,12 +134,37 @@ class Livekit
             config('livekit.api_secret'),
         );
 
+        // Configure video encoding for portrait 1080p HIGH quality (1080x1920)
+        $videoLayer = new VideoLayer();
+        $videoLayer->setWidth(1080);           // Portrait width
+        $videoLayer->setHeight(1920);          // Portrait height (1080p)
+        $videoLayer->setBitrate(6000000);      // 6 Mbps for high quality (matching HIGH preset)
+
+        $videoEncodingOptions = new IngressVideoEncodingOptions();
+        $videoEncodingOptions->setVideoCodec(VideoCodec::H264_HIGH);
+        $videoEncodingOptions->setFrameRate(30);
+        $videoEncodingOptions->setLayers([$videoLayer]);
+
+        $videoOptions = new IngressVideoOptions();
+        $videoOptions->setOptions($videoEncodingOptions);
+
+        // Configure audio encoding to match egress (256 kbps, AAC codec)
+        $audioEncodingOptions = new IngressAudioEncodingOptions();
+        $audioEncodingOptions->setAudioCodec(AudioCodec::AAC);
+        $audioEncodingOptions->setBitrate(256000);  // 256 kbps
+        $audioEncodingOptions->setChannels(2);      // Stereo
+
+        $audioOptions = new IngressAudioOptions();
+        $audioOptions->setOptions($audioEncodingOptions);
+
         $ingress = $ingressService->createIngress(
             IngressInput::RTMP_INPUT,
             $roomName,
             $roomName,
             'streamer-obs',
-            'Streamer (OBS)'
+            'Streamer (OBS)',
+            $audioOptions,  // audio options (256 kbps AAC)
+            $videoOptions  // video options with 1080p HIGH preset
         );
 
         return [
