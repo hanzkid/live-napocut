@@ -141,7 +141,6 @@ class Livekit
         $videoLayer->setBitrate(6000000);      // 6 Mbps for high quality (matching HIGH preset)
 
         $videoEncodingOptions = new IngressVideoEncodingOptions();
-        $videoEncodingOptions->setVideoCodec(VideoCodec::H264_HIGH);
         $videoEncodingOptions->setFrameRate(30);
         $videoEncodingOptions->setLayers([$videoLayer]);
 
@@ -150,9 +149,7 @@ class Livekit
 
         // Configure audio encoding to match egress (256 kbps, AAC codec)
         $audioEncodingOptions = new IngressAudioEncodingOptions();
-        $audioEncodingOptions->setAudioCodec(AudioCodec::AAC);
         $audioEncodingOptions->setBitrate(256000);  // 256 kbps
-        $audioEncodingOptions->setChannels(2);      // Stereo
 
         $audioOptions = new IngressAudioOptions();
         $audioOptions->setOptions($audioEncodingOptions);
