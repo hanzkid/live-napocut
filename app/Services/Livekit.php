@@ -172,4 +172,26 @@ class Livekit
             's3_path' => null,
         ];
     }
+
+    public static function startIngressManually($ingressId){
+        $livestream = LiveStream::where('ingress_id', $ingressId)->first();
+
+        if ($livestream) {
+            try {
+                $s3PathPrefix = $livestream->id . '-' . Str::random(8) . '/';
+                $activeEgressID = Livekit::listActiveEgressId();
+                $egressId = Livekit::startEgressForRoom($roomName, $s3PathPrefix);
+
+                $livestream->update([
+                    'is_active' => true,
+                    'started_at' => now(),
+                    'egress_id' => $egressId,
+                    's3_path' => $s3PathPrefix . 'live.m3u8',
+                ]);
+                Livekit::stopEgress($activeEgressID);
+            } catch (\Exception $e) {
+                Log::error("Failed to start egress for livestream {$livestream->id}: {$e->getMessage()}");
+            }
+        }
+    }
 }
