@@ -176,14 +176,14 @@ class Livekit
         ];
     }
 
-    public static function startIngressManually($ingressId){
+    public static function startEgressManually($ingressId){
         $livestream = LiveStream::where('ingress_id', $ingressId)->first();
 
         if ($livestream) {
             try {
                 $s3PathPrefix = $livestream->id . '-' . Str::random(8) . '/';
                 $activeEgressID = Livekit::listActiveEgressId();
-                $egressId = Livekit::startEgressForRoom($roomName, $s3PathPrefix);
+                $egressId = Livekit::startEgressForRoom($livestream->title, $s3PathPrefix);
 
                 $livestream->update([
                     'is_active' => true,
