@@ -100,7 +100,7 @@ class Livekit
         $options = new EncodingOptions;
         $options->setWidth(1080);           // Portrait width
         $options->setHeight(1920);          // Portrait height (1080p)
-        $options->setVideoBitrate(4500);    // 6 Mbps for high quality
+        $options->setVideoBitrate(6000);    // 6 Mbps for high quality
         $options->setAudioBitrate(256);     // 256 kbps for high quality audio
         $options->setAudioFrequency(48000); // 48 kHz audio
         $options->setVideoCodec(VideoCodec::H264_HIGH); // H264 High profile
