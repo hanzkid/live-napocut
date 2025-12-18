@@ -76,7 +76,7 @@ class LivestreamController extends Controller
             // 'product_ids.*' => ['exists:products,id'],
         ]);
 
-        $streamData = Livekit::createRoom($validated['title'], true);
+        $streamData = Livekit::createRoom($validated['title'], config('livekit.input_mode'));
 
         $livestream = LiveStream::create([
             'title' => $validated['title'],

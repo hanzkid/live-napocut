@@ -47,7 +47,7 @@ class ProductController extends Controller
      */
     private function broadcastProductsUpdate(): void
     {
-        event(new ProductsUpdated());
+        event(new ProductsUpdated);
     }
 
     /**
@@ -56,6 +56,7 @@ class ProductController extends Controller
     public function apiIndex(): \Illuminate\Http\JsonResponse
     {
         $products = $this->formatProductsForLivestream();
+
         return response()->json(['products' => $products]);
     }
 

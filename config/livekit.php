@@ -12,4 +12,6 @@ return [
     's3_secret' => env('LIVEKIT_S3_SECRET'),
     's3_endpoint' => env('LIVEKIT_S3_ENDPOINT'),
     's3_public_url' => env('LIVEKIT_S3_PUBLIC_URL'),
+
+    'input_mode' => env('LIVEKIT_INPUT_MODE', 'rtmp'),
 ];

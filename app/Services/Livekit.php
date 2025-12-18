@@ -6,28 +6,28 @@ use Agence104\LiveKit\EgressServiceClient;
 use Agence104\LiveKit\IngressServiceClient;
 use Agence104\LiveKit\RoomCreateOptions;
 use Agence104\LiveKit\RoomServiceClient;
+use App\Models\LiveStream;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Livekit\AudioCodec;
 use Livekit\EncodingOptions;
-use Livekit\IngressInput;
 use Livekit\IngressAudioEncodingOptions;
 use Livekit\IngressAudioOptions;
+use Livekit\IngressInput;
 use Livekit\IngressVideoEncodingOptions;
 use Livekit\IngressVideoOptions;
-use Livekit\VideoCodec;
-use Livekit\AudioCodec;
-use Livekit\VideoLayer;
 use Livekit\S3Upload;
 use Livekit\SegmentedFileOutput;
 use Livekit\SegmentedFileProtocol;
-use App\Models\LiveStream;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
+use Livekit\VideoCodec;
+use Livekit\VideoLayer;
 
 class Livekit
 {
     /**
      * Stop existing egresses by IDs
-     * 
-     * @param array $egressIds Array of egress IDs to stop
+     *
+     * @param  array  $egressIds  Array of egress IDs to stop
      */
     public static function stopEgress(array $egressIds): void
     {
@@ -67,6 +67,7 @@ class Livekit
 
         return $egressId;
     }
+
     /**
      * Start egress for a room with given S3 path
      */
@@ -117,7 +118,7 @@ class Livekit
         return $egress->getEgressId();
     }
 
-    public static function createRoom(string $roomName, bool $whip = false)
+    public static function createRoom(string $roomName, string $inputMode = 'rtmp')
     {
         $roomService = new RoomServiceClient(
             config('livekit.api_url'),
@@ -137,36 +138,44 @@ class Livekit
             config('livekit.api_secret'),
         );
 
-        // Configure video encoding for portrait 1080p HIGH quality (1080x1920)
-        $videoLayer = new VideoLayer();
-        $videoLayer->setWidth(1080);           // Portrait width
-        $videoLayer->setHeight(1920);          // Portrait height (1080p)
-        $videoLayer->setBitrate(6000000);      // 6 Mbps for high quality (matching HIGH preset)
-
-        $videoEncodingOptions = new IngressVideoEncodingOptions();
-        $videoEncodingOptions->setFrameRate(30);
-        $videoEncodingOptions->setLayers([$videoLayer]);
-
-        $videoOptions = new IngressVideoOptions();
-        $videoOptions->setOptions($videoEncodingOptions);
-
-        // Configure audio encoding to match egress (256 kbps, AAC codec)
-        $audioEncodingOptions = new IngressAudioEncodingOptions();
-        $audioEncodingOptions->setBitrate(256000);  // 256 kbps
-
-        $audioOptions = new IngressAudioOptions();
-        $audioOptions->setOptions($audioEncodingOptions);
-
+        $inputMode = 0;
         $bypassTranscoding = false;
+        $videoOptions = null;
+        $audioOptions = null;
 
-        if ($whip) {
-            $bypassTranscoding = true;
-            $videoOptions = null;
-            $audioOptions = null;
+        switch ($inputMode) {
+            case 'whip':
+                $bypassTranscoding = true;
+                $videoOptions = null;
+                $audioOptions = null;
+                $inputMode = IngressInput::WHIP_INPUT;
+                break;
+            case 'rtmp':
+                $videoLayer = new VideoLayer;
+                $videoLayer->setWidth(1080);           // Portrait width
+                $videoLayer->setHeight(1920);          // Portrait height (1080p)
+                $videoLayer->setBitrate(6000000);      // 6 Mbps for high quality (matching HIGH preset)
+
+                $videoEncodingOptions = new IngressVideoEncodingOptions;
+                $videoEncodingOptions->setFrameRate(30);
+                $videoEncodingOptions->setLayers([$videoLayer]);
+
+                $videoOptions = new IngressVideoOptions;
+                $videoOptions->setOptions($videoEncodingOptions);
+
+                $audioEncodingOptions = new IngressAudioEncodingOptions;
+                $audioEncodingOptions->setBitrate(256000);  // 256 kbps
+
+                $audioOptions = new IngressAudioOptions;
+                $audioOptions->setOptions($audioEncodingOptions);
+
+                $bypassTranscoding = false;
+                $inputMode = IngressInput::RTMP_INPUT;
+                break;
         }
-        
+
         $ingress = $ingressService->createIngress(
-            $whip ? IngressInput::WHIP_INPUT : IngressInput::RTMP_INPUT,
+            $inputMode,
             $roomName,
             $roomName,
             'streamer-obs',
@@ -185,12 +194,13 @@ class Livekit
         ];
     }
 
-    public static function startEgressManually($ingressId){
+    public static function startEgressManually($ingressId)
+    {
         $livestream = LiveStream::where('ingress_id', $ingressId)->first();
 
         if ($livestream) {
             try {
-                $s3PathPrefix = $livestream->id . '-' . Str::random(8) . '/';
+                $s3PathPrefix = $livestream->id.'-'.Str::random(8).'/';
                 $activeEgressID = Livekit::listActiveEgressId();
                 $egressId = Livekit::startEgressForRoom($livestream->title, $s3PathPrefix);
 
@@ -198,7 +208,7 @@ class Livekit
                     'is_active' => true,
                     'started_at' => now(),
                     'egress_id' => $egressId,
-                    's3_path' => $s3PathPrefix . 'live.m3u8',
+                    's3_path' => $s3PathPrefix.'live.m3u8',
                 ]);
                 Livekit::stopEgress($activeEgressID);
             } catch (\Exception $e) {
