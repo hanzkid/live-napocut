@@ -154,7 +154,7 @@ class Livekit
                 $videoLayer = new VideoLayer;
                 $videoLayer->setWidth(1080);           // Portrait width
                 $videoLayer->setHeight(1920);          // Portrait height (1080p)
-                $videoLayer->setBitrate(4500000);      // 4.5 Mbps for high quality (matching HIGH preset)
+                $videoLayer->setBitrate(6000000);      // 4.5 Mbps for high quality (matching HIGH preset)
 
                 $videoEncodingOptions = new IngressVideoEncodingOptions;
                 $videoEncodingOptions->setFrameRate(30);
