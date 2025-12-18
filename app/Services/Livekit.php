@@ -117,7 +117,7 @@ class Livekit
         return $egress->getEgressId();
     }
 
-    public static function createRoom(string $roomName)
+    public static function createRoom(string $roomName, bool $whip = false)
     {
         $roomService = new RoomServiceClient(
             config('livekit.api_url'),
@@ -157,14 +157,23 @@ class Livekit
         $audioOptions = new IngressAudioOptions();
         $audioOptions->setOptions($audioEncodingOptions);
 
+        $bypassTranscoding = false;
+
+        if ($whip) {
+            $bypassTranscoding = true;
+            $videoOptions = null;
+            $audioOptions = null;
+        }
+        
         $ingress = $ingressService->createIngress(
-            IngressInput::RTMP_INPUT,
+            $whip ? IngressInput::WHIP_INPUT : IngressInput::RTMP_INPUT,
             $roomName,
             $roomName,
             'streamer-obs',
             'Streamer (OBS)',
-            $audioOptions,  // audio options (256 kbps AAC)
-            $videoOptions  // video options with 1080p HIGH preset
+            $audioOptions,
+            $videoOptions,
+            $bypassTranscoding
         );
 
         return [
