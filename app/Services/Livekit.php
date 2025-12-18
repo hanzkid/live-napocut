@@ -100,7 +100,7 @@ class Livekit
         $options = new EncodingOptions;
         $options->setWidth(1080);           // Portrait width
         $options->setHeight(1920);          // Portrait height (1080p)
-        $options->setVideoBitrate(6000);    // 6 Mbps for high quality
+        $options->setVideoBitrate(4500);    // 6 Mbps for high quality
         $options->setAudioBitrate(256);     // 256 kbps for high quality audio
         $options->setAudioFrequency(48000); // 48 kHz audio
         $options->setVideoCodec(VideoCodec::H264_HIGH); // H264 High profile
@@ -154,7 +154,7 @@ class Livekit
                 $videoLayer = new VideoLayer;
                 $videoLayer->setWidth(1080);           // Portrait width
                 $videoLayer->setHeight(1920);          // Portrait height (1080p)
-                $videoLayer->setBitrate(6000000);      // 6 Mbps for high quality (matching HIGH preset)
+                $videoLayer->setBitrate(4500000);      // 4.5 Mbps for high quality (matching HIGH preset)
 
                 $videoEncodingOptions = new IngressVideoEncodingOptions;
                 $videoEncodingOptions->setFrameRate(30);
@@ -200,7 +200,7 @@ class Livekit
 
         if ($livestream) {
             try {
-                $s3PathPrefix = $livestream->id.'-'.Str::random(8).'/';
+                $s3PathPrefix = $livestream->id . '-' . Str::random(8) . '/';
                 $activeEgressID = Livekit::listActiveEgressId();
                 $egressId = Livekit::startEgressForRoom($livestream->title, $s3PathPrefix);
 
@@ -208,7 +208,7 @@ class Livekit
                     'is_active' => true,
                     'started_at' => now(),
                     'egress_id' => $egressId,
-                    's3_path' => $s3PathPrefix.'live.m3u8',
+                    's3_path' => $s3PathPrefix . 'live.m3u8',
                 ]);
                 Livekit::stopEgress($activeEgressID);
             } catch (\Exception $e) {
