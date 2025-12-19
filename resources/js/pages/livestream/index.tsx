@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/livestream/ui/table';
 import AppLayout from '@/layouts/app-layout';
@@ -179,8 +180,9 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
     const [createdStreamData, setCreatedStreamData] = useState<{ ws_url: string; stream_key: string } | null>(null);
-    const { data, setData, post, processing, errors, reset } = useForm<{ title: string }>({
+    const { data, setData, post, processing, errors, reset } = useForm<{ title: string; inputMode: 'rtmp' | 'whip' }>({
         title: '',
+        inputMode: 'rtmp',
     });
     const page = usePage<{ flash: { createdStream?: { ws_url: string; stream_key: string } } }>();
 
@@ -403,6 +405,28 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
                                 required
                             />
                             {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Input Mode</Label>
+                            <ToggleGroup
+                                type="single"
+                                value={data.inputMode}
+                                onValueChange={(value) => {
+                                    if (value) {
+                                        setData('inputMode', value as 'rtmp' | 'whip');
+                                    }
+                                }}
+                                disabled={processing}
+                            >
+                                <ToggleGroupItem value="rtmp" aria-label="RTMP">
+                                    RTMP
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="whip" aria-label="WHIP">
+                                    WHIP
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                            {errors.inputMode && <p className="text-sm text-destructive">{errors.inputMode}</p>}
                         </div>
 
                         <DialogFooter className="gap-2 sm:space-x-2">

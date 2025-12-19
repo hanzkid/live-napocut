@@ -71,12 +71,14 @@ class LivestreamController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'input_mode' => ['nullable', 'string', 'in:rtmp,whip'],
             // TODO: Re-enable after client approval
             // 'product_ids' => ['nullable', 'array'],
             // 'product_ids.*' => ['exists:products,id'],
         ]);
 
-        $streamData = Livekit::createRoom($validated['title'], config('livekit.input_mode'));
+        $inputMode = $validated['input_mode'] ?? 'rtmp';
+        $streamData = Livekit::createRoom($validated['title'], $inputMode);
 
         $livestream = LiveStream::create([
             'title' => $validated['title'],

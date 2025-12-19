@@ -138,7 +138,7 @@ class Livekit
             config('livekit.api_secret'),
         );
 
-        $inputMode = 0;
+        $ingressInput = 0;
         $bypassTranscoding = false;
         $videoOptions = null;
         $audioOptions = null;
@@ -148,13 +148,14 @@ class Livekit
                 $bypassTranscoding = true;
                 $videoOptions = null;
                 $audioOptions = null;
-                $inputMode = IngressInput::WHIP_INPUT;
+                $ingressInput = IngressInput::WHIP_INPUT;
                 break;
             case 'rtmp':
+            default:
                 $videoLayer = new VideoLayer;
                 $videoLayer->setWidth(1080);           // Portrait width
                 $videoLayer->setHeight(1920);          // Portrait height (1080p)
-                $videoLayer->setBitrate(6000000);      // 4.5 Mbps for high quality (matching HIGH preset)
+                $videoLayer->setBitrate(8000000);      // 4.5 Mbps for high quality (matching HIGH preset)
 
                 $videoEncodingOptions = new IngressVideoEncodingOptions;
                 $videoEncodingOptions->setFrameRate(30);
@@ -170,12 +171,12 @@ class Livekit
                 $audioOptions->setOptions($audioEncodingOptions);
 
                 $bypassTranscoding = false;
-                $inputMode = IngressInput::RTMP_INPUT;
+                $ingressInput = IngressInput::RTMP_INPUT;
                 break;
         }
 
         $ingress = $ingressService->createIngress(
-            $inputMode,
+            $ingressInput,
             $roomName,
             $roomName,
             'streamer-obs',
