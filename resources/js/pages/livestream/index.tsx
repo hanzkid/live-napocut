@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/livestream/ui/table';
 import AppLayout from '@/layouts/app-layout';
@@ -29,7 +30,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { ArrowUpDown, Copy, Plus, CheckCircle2, Check, ChevronsUpDown, X } from 'lucide-react';
+import { ArrowUpDown, Copy, Plus, CheckCircle2, Check, ChevronDown, X } from 'lucide-react';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { usePage } from '@inertiajs/react';
 // Product selection has been removed from livestreams
@@ -417,116 +418,127 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
                             {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
                         </div>
 
-                        <div className="space-y-2">
-                            <Label>Input Mode</Label>
-                            <ToggleGroup
-                                type="single"
-                                value={data.inputMode}
-                                onValueChange={(value) => {
-                                    if (value) {
-                                        setData('inputMode', value as 'rtmp' | 'whip');
-                                    }
-                                }}
+                        <Collapsible>
+                            <CollapsibleTrigger
+                                className="flex w-full items-center justify-between py-3 text-sm font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180 disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={processing}
                             >
-                                <ToggleGroupItem value="rtmp" aria-label="RTMP">
-                                    RTMP
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value="whip" aria-label="WHIP">
-                                    WHIP
-                                </ToggleGroupItem>
-                            </ToggleGroup>
-                            {errors.inputMode && <p className="text-sm text-destructive">{errors.inputMode}</p>}
-                        </div>
-
-                        {data.inputMode === 'rtmp' && (
-                            <div className="space-y-4 pt-2 border-t">
+                                <span>Advanced configuration</span>
+                                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="space-y-4 pt-2 overflow-hidden transition-all">
                                 <div className="space-y-2">
-                                    <Label>Resolution Preset</Label>
-                                    <Select
-                                        value={`${data.resolutionWidth}x${data.resolutionHeight}`}
+                                    <Label>Input Mode</Label>
+                                    <ToggleGroup
+                                        type="single"
+                                        value={data.inputMode}
                                         onValueChange={(value) => {
-                                            const [width, height] = value.split('x').map(Number);
-                                            setData('resolutionWidth', width);
-                                            setData('resolutionHeight', height);
+                                            if (value) {
+                                                setData('inputMode', value as 'rtmp' | 'whip');
+                                            }
                                         }}
                                         disabled={processing}
                                     >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select resolution" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectLabel>Portrait</SelectLabel>
-                                                <SelectItem value="1080x1920" defaultChecked>
-                                                    1080x1920 (1080p)
-                                                </SelectItem>
-                                                <SelectItem value="720x1280">720x1280 (720p)</SelectItem>
-                                                <SelectItem value="480x854">480x854 (480p)</SelectItem>
-                                                <SelectItem value="360x640">360x640 (360p)</SelectItem>
-                                            </SelectGroup>
-                                            <SelectGroup>
-                                                <SelectLabel>Landscape</SelectLabel>
-                                                <SelectItem value="1920x1080">1920x1080 (1080p)</SelectItem>
-                                                <SelectItem value="1280x720">1280x720 (720p)</SelectItem>
-                                                <SelectItem value="854x480">854x480 (480p)</SelectItem>
-                                                <SelectItem value="640x360">640x360 (360p)</SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
+                                        <ToggleGroupItem value="rtmp" aria-label="RTMP">
+                                            RTMP
+                                        </ToggleGroupItem>
+                                        <ToggleGroupItem value="whip" aria-label="WHIP">
+                                            WHIP
+                                        </ToggleGroupItem>
+                                    </ToggleGroup>
+                                    {errors.inputMode && <p className="text-sm text-destructive">{errors.inputMode}</p>}
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="resolution-width">Width</Label>
-                                        <Input
-                                            id="resolution-width"
-                                            type="number"
-                                            value={data.resolutionWidth || ''}
-                                            onChange={(event) => setData('resolutionWidth', parseInt(event.target.value) || undefined)}
-                                            disabled={processing}
-                                            min={1}
-                                        />
-                                        {errors.resolutionWidth && <p className="text-sm text-destructive">{errors.resolutionWidth}</p>}
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="resolution-height">Height</Label>
-                                        <Input
-                                            id="resolution-height"
-                                            type="number"
-                                            value={data.resolutionHeight || ''}
-                                            onChange={(event) => setData('resolutionHeight', parseInt(event.target.value) || undefined)}
-                                            disabled={processing}
-                                            min={1}
-                                        />
-                                        {errors.resolutionHeight && <p className="text-sm text-destructive">{errors.resolutionHeight}</p>}
-                                    </div>
-                                </div>
+                                {data.inputMode === 'rtmp' && (
+                                    <div className="space-y-4 pt-2 border-t">
+                                        <div className="space-y-2">
+                                            <Label>Resolution Preset</Label>
+                                            <Select
+                                                value={`${data.resolutionWidth}x${data.resolutionHeight}`}
+                                                onValueChange={(value) => {
+                                                    const [width, height] = value.split('x').map(Number);
+                                                    setData('resolutionWidth', width);
+                                                    setData('resolutionHeight', height);
+                                                }}
+                                                disabled={processing}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select resolution" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectLabel>Portrait</SelectLabel>
+                                                        <SelectItem value="1080x1920" defaultChecked>
+                                                            1080x1920 (1080p)
+                                                        </SelectItem>
+                                                        <SelectItem value="720x1280">720x1280 (720p)</SelectItem>
+                                                        <SelectItem value="480x854">480x854 (480p)</SelectItem>
+                                                        <SelectItem value="360x640">360x640 (360p)</SelectItem>
+                                                    </SelectGroup>
+                                                    <SelectGroup>
+                                                        <SelectLabel>Landscape</SelectLabel>
+                                                        <SelectItem value="1920x1080">1920x1080 (1080p)</SelectItem>
+                                                        <SelectItem value="1280x720">1280x720 (720p)</SelectItem>
+                                                        <SelectItem value="854x480">854x480 (480p)</SelectItem>
+                                                        <SelectItem value="640x360">640x360 (360p)</SelectItem>
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="bitrate">Bitrate (kbps)</Label>
-                                    <Input
-                                        id="bitrate"
-                                        type="number"
-                                        value={data.bitrate || ''}
-                                        onChange={(event) => setData('bitrate', parseInt(event.target.value) || undefined)}
-                                        disabled={processing}
-                                        min={1}
-                                        placeholder="2500"
-                                    />
-                                    <div className="space-y-1 text-xs text-muted-foreground">
-                                        <p>
-                                            <span className="font-medium">Recommended bitrates:</span> 6000 kbps for 1080p, 3000 kbps for 720p, 1500 kbps for 480p.
-                                        </p>
-                                        <p>
-                                            Higher bitrates provide better video quality but require a more stable network connection 
-                                            to avoid buffering, dropped frames, or disconnections.
-                                        </p>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="resolution-width">Width</Label>
+                                                <Input
+                                                    id="resolution-width"
+                                                    type="number"
+                                                    value={data.resolutionWidth || ''}
+                                                    onChange={(event) => setData('resolutionWidth', parseInt(event.target.value) || undefined)}
+                                                    disabled={processing}
+                                                    min={1}
+                                                />
+                                                {errors.resolutionWidth && <p className="text-sm text-destructive">{errors.resolutionWidth}</p>}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="resolution-height">Height</Label>
+                                                <Input
+                                                    id="resolution-height"
+                                                    type="number"
+                                                    value={data.resolutionHeight || ''}
+                                                    onChange={(event) => setData('resolutionHeight', parseInt(event.target.value) || undefined)}
+                                                    disabled={processing}
+                                                    min={1}
+                                                />
+                                                {errors.resolutionHeight && <p className="text-sm text-destructive">{errors.resolutionHeight}</p>}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="bitrate">Bitrate (kbps)</Label>
+                                            <Input
+                                                id="bitrate"
+                                                type="number"
+                                                value={data.bitrate || ''}
+                                                onChange={(event) => setData('bitrate', parseInt(event.target.value) || undefined)}
+                                                disabled={processing}
+                                                min={1}
+                                                placeholder="2500"
+                                            />
+                                            <div className="space-y-1 text-xs text-muted-foreground">
+                                                <p>
+                                                    <span className="font-medium">Recommended bitrates:</span> 6000 kbps for 1080p, 3000 kbps for 720p, 1500 kbps for 480p.
+                                                </p>
+                                                <p>
+                                                    Higher bitrates provide better video quality but require a more stable network connection 
+                                                    to avoid buffering, dropped frames, or disconnections.
+                                                </p>
+                                            </div>
+                                            {errors.bitrate && <p className="text-sm text-destructive">{errors.bitrate}</p>}
+                                        </div>
                                     </div>
-                                    {errors.bitrate && <p className="text-sm text-destructive">{errors.bitrate}</p>}
-                                </div>
-                            </div>
-                        )}
+                                )}
+                            </CollapsibleContent>
+                        </Collapsible>
 
                         <DialogFooter className="gap-2 sm:space-x-2">
                             <Button type="button" variant="ghost" onClick={closeDialog} disabled={processing}>
