@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/livestream/ui/table';
@@ -180,9 +181,18 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
     const [createdStreamData, setCreatedStreamData] = useState<{ ws_url: string; stream_key: string } | null>(null);
-    const { data, setData, post, processing, errors, reset } = useForm<{ title: string; inputMode: 'rtmp' | 'whip' }>({
+    const { data, setData, post, processing, errors, reset } = useForm<{ 
+        title: string; 
+        inputMode: 'rtmp' | 'whip';
+        resolutionWidth?: number;
+        resolutionHeight?: number;
+        bitrate?: number;
+    }>({
         title: '',
         inputMode: 'rtmp',
+        resolutionWidth: 1080,
+        resolutionHeight: 1920,
+        bitrate: 6000,
     });
     const page = usePage<{ flash: { createdStream?: { ws_url: string; stream_key: string } } }>();
 
@@ -428,6 +438,95 @@ export default function LivestreamIndex({ streams = [] }: LivestreamIndexProps) 
                             </ToggleGroup>
                             {errors.inputMode && <p className="text-sm text-destructive">{errors.inputMode}</p>}
                         </div>
+
+                        {data.inputMode === 'rtmp' && (
+                            <div className="space-y-4 pt-2 border-t">
+                                <div className="space-y-2">
+                                    <Label>Resolution Preset</Label>
+                                    <Select
+                                        value={`${data.resolutionWidth}x${data.resolutionHeight}`}
+                                        onValueChange={(value) => {
+                                            const [width, height] = value.split('x').map(Number);
+                                            setData('resolutionWidth', width);
+                                            setData('resolutionHeight', height);
+                                        }}
+                                        disabled={processing}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select resolution" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectLabel>Portrait</SelectLabel>
+                                                <SelectItem value="1080x1920" defaultChecked>
+                                                    1080x1920 (1080p)
+                                                </SelectItem>
+                                                <SelectItem value="720x1280">720x1280 (720p)</SelectItem>
+                                                <SelectItem value="480x854">480x854 (480p)</SelectItem>
+                                                <SelectItem value="360x640">360x640 (360p)</SelectItem>
+                                            </SelectGroup>
+                                            <SelectGroup>
+                                                <SelectLabel>Landscape</SelectLabel>
+                                                <SelectItem value="1920x1080">1920x1080 (1080p)</SelectItem>
+                                                <SelectItem value="1280x720">1280x720 (720p)</SelectItem>
+                                                <SelectItem value="854x480">854x480 (480p)</SelectItem>
+                                                <SelectItem value="640x360">640x360 (360p)</SelectItem>
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="resolution-width">Width</Label>
+                                        <Input
+                                            id="resolution-width"
+                                            type="number"
+                                            value={data.resolutionWidth || ''}
+                                            onChange={(event) => setData('resolutionWidth', parseInt(event.target.value) || undefined)}
+                                            disabled={processing}
+                                            min={1}
+                                        />
+                                        {errors.resolutionWidth && <p className="text-sm text-destructive">{errors.resolutionWidth}</p>}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="resolution-height">Height</Label>
+                                        <Input
+                                            id="resolution-height"
+                                            type="number"
+                                            value={data.resolutionHeight || ''}
+                                            onChange={(event) => setData('resolutionHeight', parseInt(event.target.value) || undefined)}
+                                            disabled={processing}
+                                            min={1}
+                                        />
+                                        {errors.resolutionHeight && <p className="text-sm text-destructive">{errors.resolutionHeight}</p>}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="bitrate">Bitrate (kbps)</Label>
+                                    <Input
+                                        id="bitrate"
+                                        type="number"
+                                        value={data.bitrate || ''}
+                                        onChange={(event) => setData('bitrate', parseInt(event.target.value) || undefined)}
+                                        disabled={processing}
+                                        min={1}
+                                        placeholder="2500"
+                                    />
+                                    <div className="space-y-1 text-xs text-muted-foreground">
+                                        <p>
+                                            <span className="font-medium">Recommended bitrates:</span> 6000 kbps for 1080p, 3000 kbps for 720p, 1500 kbps for 480p.
+                                        </p>
+                                        <p>
+                                            Higher bitrates provide better video quality but require a more stable network connection 
+                                            to avoid buffering, dropped frames, or disconnections.
+                                        </p>
+                                    </div>
+                                    {errors.bitrate && <p className="text-sm text-destructive">{errors.bitrate}</p>}
+                                </div>
+                            </div>
+                        )}
 
                         <DialogFooter className="gap-2 sm:space-x-2">
                             <Button type="button" variant="ghost" onClick={closeDialog} disabled={processing}>

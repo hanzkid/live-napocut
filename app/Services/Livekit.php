@@ -21,6 +21,7 @@ use Livekit\SegmentedFileOutput;
 use Livekit\SegmentedFileProtocol;
 use Livekit\VideoCodec;
 use Livekit\VideoLayer;
+use Livekit\VideoQuality;
 
 class Livekit
 {
@@ -71,7 +72,7 @@ class Livekit
     /**
      * Start egress for a room with given S3 path
      */
-    public static function startEgressForRoom(string $roomName, string $s3Path): string
+    public static function startEgressForRoom(string $roomName, string $s3Path, array $configuration): string
     {
         $s3 = new S3Upload([
             'access_key' => config('livekit.s3_access_key'),
@@ -98,14 +99,16 @@ class Livekit
 
         // Custom encoding options for high quality 1080p portrait
         $options = new EncodingOptions;
-        $options->setWidth(1080);           // Portrait width
-        $options->setHeight(1920);          // Portrait height (1080p)
-        $options->setVideoBitrate(6000);    // 6 Mbps for high quality
+        $options->setWidth($configuration['resolution_width']);           // Portrait width
+        $options->setHeight($configuration['resolution_height']);          // Portrait height (1080p)
+        $options->setVideoBitrate($configuration['bitrate']);    // 6 Mbps for high quality
+        $options->setVideoQuality(VideoQuality::HIGH);
         $options->setAudioBitrate(256);     // 256 kbps for high quality audio
         $options->setAudioFrequency(48000); // 48 kHz audio
         $options->setVideoCodec(VideoCodec::H264_HIGH); // H264 High profile
         $options->setAudioCodec(AudioCodec::AAC); // AAC required for HLS
         $options->setFramerate(30);         // 30 fps
+        $options->setKeyFrameInterval(3); // 3 seconds key frame interval
 
         $egress = $egressService->startRoomCompositeEgress(
             $roomName,
@@ -118,7 +121,7 @@ class Livekit
         return $egress->getEgressId();
     }
 
-    public static function createRoom(string $roomName, string $inputMode = 'rtmp')
+    public static function createRoom(string $roomName, array $configuration)
     {
         $roomService = new RoomServiceClient(
             config('livekit.api_url'),
@@ -143,7 +146,7 @@ class Livekit
         $videoOptions = null;
         $audioOptions = null;
 
-        switch ($inputMode) {
+        switch ($configuration['input_mode']) {
             case 'whip':
                 $bypassTranscoding = true;
                 $videoOptions = null;
@@ -153,13 +156,15 @@ class Livekit
             case 'rtmp':
             default:
                 $videoLayer = new VideoLayer;
-                $videoLayer->setWidth(1080);           // Portrait width
-                $videoLayer->setHeight(1920);          // Portrait height (1080p)
-                $videoLayer->setBitrate(8000000);      // 4.5 Mbps for high quality (matching HIGH preset)
+                $videoLayer->setWidth($configuration['resolution_width']);
+                $videoLayer->setHeight($configuration['resolution_height']);
+                $videoLayer->setBitrate($configuration['bitrate'] * 1000);
+                $videoLayer->setQuality(VideoQuality::HIGH);
 
                 $videoEncodingOptions = new IngressVideoEncodingOptions;
                 $videoEncodingOptions->setFrameRate(30);
                 $videoEncodingOptions->setLayers([$videoLayer]);
+                // $videoEncodingOptions->setVideoCodec(VideoCodec::H264_HIGH);
 
                 $videoOptions = new IngressVideoOptions;
                 $videoOptions->setOptions($videoEncodingOptions);
@@ -203,7 +208,12 @@ class Livekit
             try {
                 $s3PathPrefix = $livestream->id . '-' . Str::random(8) . '/';
                 $activeEgressID = Livekit::listActiveEgressId();
-                $egressId = Livekit::startEgressForRoom($livestream->title, $s3PathPrefix);
+                $configuration = [
+                    'resolution_width' => $livestream->resolution_width,
+                    'resolution_height' => $livestream->resolution_height,
+                    'bitrate' => $livestream->bitrate,
+                ];
+                $egressId = Livekit::startEgressForRoom($livestream->title, $s3PathPrefix, $configuration);
 
                 $livestream->update([
                     'is_active' => true,

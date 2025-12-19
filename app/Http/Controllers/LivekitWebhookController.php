@@ -37,7 +37,7 @@ class LivekitWebhookController extends Controller
                     break;
 
                 default:
-                    // Unknown event type, no action needed
+                // Unknown event type, no action needed
             }
 
             return response()->json(['success' => true], 200);
@@ -65,15 +65,20 @@ class LivekitWebhookController extends Controller
 
         if ($livestream) {
             try {
-                $s3PathPrefix = $livestream->id.'-'.Str::random(8).'/';
+                $s3PathPrefix = $livestream->id . '-' . Str::random(8) . '/';
                 $activeEgressID = Livekit::listActiveEgressId();
-                $egressId = Livekit::startEgressForRoom($roomName, $s3PathPrefix);
+                $configuration = [
+                    'resolution_width' => $livestream->resolution_width,
+                    'resolution_height' => $livestream->resolution_height,
+                    'bitrate' => $livestream->bitrate,
+                ];
+                $egressId = Livekit::startEgressForRoom($roomName, $s3PathPrefix, $configuration);
 
                 $livestream->update([
                     'is_active' => true,
                     'started_at' => now(),
                     'egress_id' => $egressId,
-                    's3_path' => $s3PathPrefix.'live.m3u8',
+                    's3_path' => $s3PathPrefix . 'live.m3u8',
                 ]);
                 Livekit::stopEgress($activeEgressID);
             } catch (\Exception $e) {

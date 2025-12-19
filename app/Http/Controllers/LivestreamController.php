@@ -22,10 +22,7 @@ class LivestreamController extends Controller
             'started_at',
             'ended_at',
             'created_at',
-        ])
-            // TODO: Re-enable after client approval
-            // ->with('products.images')
-            ->latest()->get();
+        ])->latest()->get();
 
         return Inertia::render('livestream/index', [
             'streams' => $streams,
@@ -34,9 +31,6 @@ class LivestreamController extends Controller
 
     public function show(LiveStream $livestream): Response
     {
-        // TODO: Re-enable after client approval
-        // $livestream->load('products.images');
-
         $formattedLivestream = [
             'id' => $livestream->id,
             'title' => $livestream->title,
@@ -49,17 +43,6 @@ class LivestreamController extends Controller
             'ended_at' => $livestream->ended_at,
             'created_at' => $livestream->created_at,
             'updated_at' => $livestream->updated_at,
-            // TODO: Re-enable after client approval
-            // 'products' => $livestream->products->map(function ($product) {
-            //     return [
-            //         'id' => $product->id,
-            //         'name' => $product->name,
-            //         'description' => $product->description,
-            //         'price' => $product->formatted_price,
-            //         'link' => $product->link,
-            //         'image' => $product->images->first()?->url,
-            //     ];
-            // }),
         ];
 
         return Inertia::render('livestream/show', [
@@ -71,14 +54,20 @@ class LivestreamController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'input_mode' => ['nullable', 'string', 'in:rtmp,whip'],
-            // TODO: Re-enable after client approval
-            // 'product_ids' => ['nullable', 'array'],
-            // 'product_ids.*' => ['exists:products,id'],
+            'inputMode' => ['nullable', 'string', 'in:rtmp,whip'],
+            'resolutionWidth' => ['nullable', 'integer', 'min:1'],
+            'resolutionHeight' => ['nullable', 'integer', 'min:1'],
+            'bitrate' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $inputMode = $validated['input_mode'] ?? 'rtmp';
-        $streamData = Livekit::createRoom($validated['title'], $inputMode);
+        $inputMode = $validated['inputMode'] ?? 'rtmp';
+        $configuration = [
+            'input_mode' => $inputMode,
+            'resolution_width' => $validated['resolutionWidth'],
+            'resolution_height' => $validated['resolutionHeight'],
+            'bitrate' => $validated['bitrate'],
+        ];
+        $streamData = Livekit::createRoom($validated['title'], $configuration);
 
         $livestream = LiveStream::create([
             'title' => $validated['title'],
@@ -87,12 +76,10 @@ class LivestreamController extends Controller
             'ingress_id' => $streamData['ingress_id'],
             'egress_id' => $streamData['egress_id'],
             's3_path' => $streamData['s3_path'],
+            'resolution_width' => $validated['resolutionWidth'],
+            'resolution_height' => $validated['resolutionHeight'],
+            'bitrate' => $validated['bitrate'],
         ]);
-
-        // TODO: Re-enable after client approval
-        // if (! empty($validated['product_ids'])) {
-        //     $livestream->products()->sync($validated['product_ids']);
-        // }
 
         return redirect()
             ->route('livestream.index')
@@ -102,28 +89,4 @@ class LivestreamController extends Controller
                 'stream_key' => $livestream->stream_key,
             ]);
     }
-
-    // TODO: Re-enable after client approval
-    // public function attachProduct(Request $request, LiveStream $livestream)
-    // {
-    //     $validated = $request->validate([
-    //         'product_id' => ['required', 'exists:products,id'],
-    //     ]);
-    //
-    //     if ($livestream->products()->where('product_id', $validated['product_id'])->exists()) {
-    //         return response()->json(['message' => 'Product already attached'], 400);
-    //     }
-    //
-    //     $livestream->products()->attach($validated['product_id']);
-    //
-    //     return response()->json(['message' => 'Product attached successfully']);
-    // }
-    //
-    // public function detachProduct(LiveStream $livestream, int $productId)
-    // {
-    //     $livestream->products()->detach($productId);
-    //
-    //     return response()->json(['message' => 'Product removed successfully']);
-    // }
-
 }

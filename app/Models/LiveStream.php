@@ -16,6 +16,9 @@ class LiveStream extends Model
         'is_active',
         'started_at',
         'ended_at',
+        'resolution_width',
+        'resolution_height',
+        'bitrate',
     ];
 
     public function products()
