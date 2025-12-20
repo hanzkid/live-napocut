@@ -3,17 +3,16 @@
 namespace App\Http\Controllers;
 
 use Agence104\LiveKit\WebhookReceiver;
+use App\Jobs\ProcessIngressEnded;
 use App\Models\LiveStream;
 use App\Services\Livekit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class LivekitWebhookController extends Controller
 {
-    /**
-     * Handle incoming LiveKit webhook events
-     */
     public function handle(Request $request)
     {
         try {
@@ -37,7 +36,6 @@ class LivekitWebhookController extends Controller
                     break;
 
                 default:
-                // Unknown event type, no action needed
             }
 
             return response()->json(['success' => true], 200);
@@ -52,20 +50,25 @@ class LivekitWebhookController extends Controller
         }
     }
 
-    /**
-     * Handle ingress_started event
-     */
     private function handleIngressStarted($event)
     {
         $ingressInfo = $event->getIngressInfo();
         $ingressId = $ingressInfo->getIngressId();
         $roomName = $ingressInfo->getRoomName();
 
+        $cacheKey = "ingress_ended_pending:{$ingressId}";
+        if (Cache::has($cacheKey)) {
+            Cache::forget($cacheKey);
+            Log::info("Cancelled pending ingress_ended processing for ingress {$ingressId} due to ingress_started");
+
+            return;
+        }
+
         $livestream = LiveStream::where('ingress_id', $ingressId)->first();
 
         if ($livestream) {
             try {
-                $s3PathPrefix = $livestream->id . '-' . Str::random(8) . '/';
+                $s3PathPrefix = $livestream->id.'-'.Str::random(8).'/';
                 $activeEgressID = Livekit::listActiveEgressId();
                 $configuration = [
                     'resolution_width' => $livestream->resolution_width,
@@ -78,7 +81,7 @@ class LivekitWebhookController extends Controller
                     'is_active' => true,
                     'started_at' => now(),
                     'egress_id' => $egressId,
-                    's3_path' => $s3PathPrefix . 'live.m3u8',
+                    's3_path' => $s3PathPrefix.'live.m3u8',
                 ]);
                 Livekit::stopEgress($activeEgressID);
             } catch (\Exception $e) {
@@ -87,9 +90,6 @@ class LivekitWebhookController extends Controller
         }
     }
 
-    /**
-     * Handle ingress_ended event
-     */
     private function handleIngressEnded($event)
     {
         $ingressInfo = $event->getIngressInfo();
@@ -97,19 +97,14 @@ class LivekitWebhookController extends Controller
 
         $livestream = LiveStream::where('ingress_id', $ingressId)->first();
 
-        if ($livestream) {
-            if ($livestream->egress_id) {
-                try {
-                    Livekit::stopEgress([$livestream->egress_id]);
-                    $livestream->update([
-                        'is_active' => false,
-                        'ended_at' => now(),
-                    ]);
-                    event(new \App\Events\LivestreamEnded);
-                } catch (\Exception $e) {
-                    Log::error("Failed to stop egress {$livestream->egress_id}: {$e->getMessage()}");
-                }
-            }
+        if ($livestream && $livestream->egress_id) {
+            $cacheKey = "ingress_ended_pending:{$ingressId}";
+            Cache::put($cacheKey, true, now()->addSeconds(120));
+
+            ProcessIngressEnded::dispatch($ingressId)
+                ->delay(now()->addSeconds(60));
+
+            Log::info("Scheduled ingress_ended processing for ingress {$ingressId} after 60s grace period");
         }
     }
 }
