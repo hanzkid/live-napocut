@@ -99,6 +99,21 @@ services:
             - redis
         command: php artisan schedule:work
         restart: unless-stopped
+    queue-worker:
+        image: serversideup/php:8.4-cli
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        environment:
+            PHP_FPM_POOL_NAME: 'queue-worker'
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - mariadb
+            - redis
+        command: php artisan queue:work
+        restart: unless-stopped
     s3-cleanup:
         image: amazon/aws-cli:latest
         extra_hosts:

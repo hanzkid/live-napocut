@@ -90,6 +90,28 @@ services:
             - redis
         command: php artisan schedule:work
         restart: unless-stopped
+    queue-worker:
+        build:
+            context: './docker/8.4'
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+                MYSQL_CLIENT: mariadb-client
+        image: 'sail-8.4/app'
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - mariadb
+            - redis
+        command: php artisan queue:work
+        restart: unless-stopped
     s3-cleanup:
         image: amazon/aws-cli:latest
         extra_hosts:
@@ -109,7 +131,6 @@ services:
         depends_on:
             - laravel.test
         entrypoint: ['/bin/sh', '/s3-cleanup-wrapper.sh']
-        restart: unless-stopped
     mariadb:
         image: 'mariadb:11'
         ports:
