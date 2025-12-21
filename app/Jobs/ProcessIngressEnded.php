@@ -27,7 +27,12 @@ class ProcessIngressEnded implements ShouldQueue
 
         if (! Cache::has($cacheKey)) {
             Log::info("Ingress {$this->ingressId} restarted, cancelling ingress_ended processing");
+            return;
+        }
 
+        $cacheTimer = Cache::get($cacheKey, now());
+        if (abs(now()->diffInSeconds($cacheTimer)) < 59) {
+            Log::info("Ingress {$this->ingressId} restarted, cancelling ingress_ended processing");
             return;
         }
 

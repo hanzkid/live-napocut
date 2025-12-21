@@ -60,7 +60,6 @@ class LivekitWebhookController extends Controller
         if (Cache::has($cacheKey)) {
             Cache::forget($cacheKey);
             Log::info("Cancelled pending ingress_ended processing for ingress {$ingressId} due to ingress_started");
-
             return;
         }
 
@@ -99,7 +98,7 @@ class LivekitWebhookController extends Controller
 
         if ($livestream && $livestream->egress_id) {
             $cacheKey = "ingress_ended_pending:{$ingressId}";
-            Cache::put($cacheKey, true, now()->addSeconds(120));
+            Cache::put($cacheKey, time(), now()->addSeconds(120));
 
             ProcessIngressEnded::dispatch($ingressId)
                 ->delay(now()->addSeconds(60));
