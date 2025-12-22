@@ -98,7 +98,7 @@ class LivekitWebhookController extends Controller
 
         if ($livestream && $livestream->egress_id) {
             $cacheKey = "ingress_ended_pending:{$ingressId}";
-            Cache::put($cacheKey, time(), now()->addSeconds(120));
+            Cache::put($cacheKey, now(), now()->addSeconds(120));
 
             ProcessIngressEnded::dispatch($ingressId)
                 ->delay(now()->addSeconds(60));
