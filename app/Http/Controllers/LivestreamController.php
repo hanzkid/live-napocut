@@ -67,7 +67,10 @@ class LivestreamController extends Controller
             'resolution_height' => $validated['resolutionHeight'],
             'bitrate' => $validated['bitrate'],
         ];
-        $streamData = Livekit::createRoom($validated['title'], $configuration);
+
+        // only create room with alphanumeric characters
+        $roomName = preg_replace('/[^a-zA-Z0-9]/', '', $validated['title']);
+        $streamData = Livekit::createRoom($roomName, $configuration);
 
         $livestream = LiveStream::create([
             'title' => $validated['title'],

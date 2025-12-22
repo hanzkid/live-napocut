@@ -52,19 +52,16 @@ const Index = (props: {
   const [streamEnded, setStreamEnded] = useState(false);
   const [products, setProducts] = useState<Product[]>(props.products);
 
-  // Initialize discount codes from props
   useEffect(() => {
     if (props.discountCodes) {
       setValidDiscountCodes(props.discountCodes);
     }
   }, [props.discountCodes]);
 
-  // Initialize products from props
   useEffect(() => {
     setProducts(props.products);
   }, [props.products]);
 
-  // Set up Laravel Echo connection for real-time discount code updates
   useEffect(() => {
     if (!props.is_active) {
       return;
@@ -81,13 +78,11 @@ const Index = (props: {
         setValidDiscountCodes(data.discountCodes);
       });
 
-    // Cleanup on unmount
     return () => {
       window.Echo.leave('discount-codes');
     };
   }, [props.is_active]);
 
-  // Set up Laravel Echo connection for real-time product updates
   useEffect(() => {
     if (!props.is_active) {
       return;
@@ -101,7 +96,6 @@ const Index = (props: {
 
     channel
       .listen('.updated', async () => {
-        // Refetch products from API when update signal is received
         try {
           const response = await fetch('/api/products');
           if (response.ok) {
@@ -113,13 +107,11 @@ const Index = (props: {
         }
       });
 
-    // Cleanup on unmount
     return () => {
       window.Echo.leave('products');
     };
   }, [props.is_active]);
 
-  // Set up Laravel Echo connection for livestream status updates
   useEffect(() => {
     if (typeof window === 'undefined' || !window.Echo) {
       return;
@@ -129,12 +121,9 @@ const Index = (props: {
 
     channel
       .listen('.ended', (data: { message: string }) => {
-        setTimeout(() => {
           setStreamEnded(true);
-        }, 10000);
       });
 
-    // Cleanup on unmount
     return () => {
       window.Echo.leave('livestream-status');
     };
@@ -145,13 +134,10 @@ const Index = (props: {
     applyThemeFront('light');
   }, []);
 
-  // Check if user needs to set their name (guest without saved name)
   useEffect(() => {
     if (props.is_guest && !props.livekit_token) {
       const savedName = localStorage.getItem("livestream_viewer_name");
 
-      // If user is a guest and has a saved name, automatically submit it
-      // This works even if they already have a Guest_xxx token
       if (savedName && props.is_active) {
         router.post(
           "/live",
@@ -160,12 +146,10 @@ const Index = (props: {
             preserveScroll: true,
             preserveState: false,
             onSuccess: () => {
-              // Token will be updated via Inertia
             },
           }
         );
       } else if (!savedName) {
-        // No saved name, show the dialog
         setShowNameDialog(true);
       }
     }
@@ -183,7 +167,6 @@ const Index = (props: {
     setNameError(null);
     setIsSubmitting(true);
 
-    // Save name to localStorage
     localStorage.setItem("livestream_viewer_name", viewerName.trim());
 
     router.post(
@@ -194,7 +177,6 @@ const Index = (props: {
         preserveState: false,
         onSuccess: () => {
           setShowNameDialog(false);
-          // Soft reload to get new token without hard refresh
           router.reload({ only: ['livekit_token', 'is_guest'] });
         },
         onError: (errors) => {
@@ -222,7 +204,6 @@ const Index = (props: {
   };
 
   const handleChatInputClick = () => {
-    // Show name dialog if user is a guest
     if (props.is_guest && props.is_active) {
       setShowNameDialog(true);
     }
