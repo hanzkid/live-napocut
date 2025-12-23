@@ -213,7 +213,8 @@ class Livekit
                     'resolution_height' => $livestream->resolution_height,
                     'bitrate' => $livestream->bitrate,
                 ];
-                $egressId = Livekit::startEgressForRoom($livestream->title, $s3PathPrefix, $configuration);
+                $roomName = preg_replace('/[^a-zA-Z0-9]/', '', $livestream->title);
+                $egressId = Livekit::startEgressForRoom($roomName, $s3PathPrefix, $configuration);
 
                 $livestream->update([
                     'is_active' => true,
