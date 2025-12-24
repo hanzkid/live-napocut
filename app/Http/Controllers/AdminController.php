@@ -86,7 +86,7 @@ class AdminController extends Controller
         // Generate admin token if stream is active
         $token = null;
         if ($activeStream && $user) {
-            $roomName = $activeStream->title;
+            $roomName = $activeStream->clean_title;
             $adminName = $user->name ?? 'Admin';
 
             $tokenOptions = (new \Agence104\LiveKit\AccessTokenOptions)
@@ -141,6 +141,7 @@ class AdminController extends Controller
             'livekit_ws_url' => $livekit['ws_url'],
             'livekit_token' => $token,
             'room_name' => $activeStream?->title,
+            'clean_room_name' => $activeStream?->clean_title,
             'hls_url' => $hlsUrl,
             'is_active' => $activeStream?->is_active ?? false,
             'products' => $products,

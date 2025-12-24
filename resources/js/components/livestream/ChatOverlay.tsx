@@ -23,7 +23,7 @@ export const ChatOverlay = () => {
         >
           <div className="flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5">
             <span className="text-white text-xs font-bold">
-              {msg.from?.identity || "System"}
+              {msg.from?.identity || "Admin"}
             </span>
             <span className="text-white text-xs">{msg.message}</span>
           </div>

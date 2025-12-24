@@ -35,7 +35,7 @@ class FrontController extends Controller
         }
 
         if (! $token && $activeStream) {
-            $roomName = $activeStream->title;
+            $roomName = $activeStream->clean_title;
 
             $name = $request->input('name');
             if ($name) {
@@ -100,6 +100,7 @@ class FrontController extends Controller
             'livekit_ws_url' => $livekit['ws_url'],
             'livekit_token' => $token,
             'room_name' => $activeStream?->title,
+            'clean_room_name' => $activeStream?->clean_title,
             'hls_url' => $hlsUrl,
             'is_active' => $activeStream?->is_active ?? false,
             'is_guest' => $isGuest,
@@ -127,7 +128,7 @@ class FrontController extends Controller
             ]);
         }
 
-        $roomName = $activeStream->title;
+        $roomName = $activeStream->clean_title;
         $newName = $request->input('name');
 
         $tokenOptions = (new AccessTokenOptions)
